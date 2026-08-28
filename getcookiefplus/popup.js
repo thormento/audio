@@ -206,12 +206,6 @@ document.addEventListener('DOMContentLoaded', function () {
 		document.getElementById('auto_save_fbaccount').checked= true;
 	}
 	
-	if((localStorage.getItem("enableGetUidIcon")+"" =="0")){
-		document.getElementById('show_getuidicon').checked= false;
-	}else{
-		document.getElementById('show_getuidicon').checked= true;
-	}
-	
 	if (localStorage.getItem("listaccount") === null) {
         //...
     } else {
@@ -330,18 +324,6 @@ document.addEventListener('DOMContentLoaded', function () {
 			link.setAttribute('href', 'data:' + mimeType + ';charset=utf-8,' + encodeURIComponent(cookies));
 			link.click();
 	})
-	$('#btngetqr').click(function(){
-		var cc= $('#cookieresult').val();
-		if(!$('#imgqrcode').is(":hidden")){
-			cc= cc.replace(/presence=.*?;/gm, "");
-			cc= cc.replace(/x-referer=.*?;/gm, "");
-			if(cc.length>1000){
-			   cc=cc.match(/(c_user=.*?;)/gm)+" " +cc.match(/(xs=.*?;)/gm);
-			}
-		}
-		$('#imgqrcode').attr("src","https://chart.googleapis.com/chart?chs=256x256&cht=qr&chl="+encodeURI(cc)+"&chld=L|1&choe=UTF-8")
-		$('#imgqrcode').show();
-	})
 	$('#auto_save_fbaccount').change(function(){
 		localStorage.setItem("autosavefbacc",document.getElementById('auto_save_fbaccount').checked?"1":"0");
 		if(document.getElementById('auto_save_fbaccount').checked && currentCookie!=""){
@@ -353,11 +335,6 @@ document.addEventListener('DOMContentLoaded', function () {
 	})
 	$('#btngettoken').click(function(){
 		 getToken();
-	})
-	$('#show_getuidicon').change(function(){
-		var val=document.getElementById('show_getuidicon').checked?"1":"0";
-		localStorage.setItem("enableGetUidIcon",val);
-		chrome.storage.local.set({enableGetUidIcon: val});
 	})
 });
 function addNewAccItem(acc) {
