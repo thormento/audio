@@ -84,8 +84,27 @@
       margin-bottom: 1px;
       padding: 5px;
       position: relative;
-      cursor: pointer;
+      cursor: default;
       }
+      #list_account .acc-main {
+      cursor: pointer;
+      padding-right: 14px;
+      }
+      #list_account .acc-note {
+      width: 100%;
+      box-sizing: border-box;
+      margin-top: 4px;
+      padding: 3px 5px;
+      border: 1px solid rgba(255,255,255,0.6);
+      border-radius: 2px;
+      font-size: 11px;
+      font-weight: normal;
+      color: #303030;
+      background: rgba(255,255,255,0.95);
+      }
+      #list_account .acc-note::placeholder { color: #8a8a8a; }
+      #list_account .acc-note:focus { outline: none; border-color: #394959; }
+      #list_account .acc-note.saved { border-color: #64c306; box-shadow: 0 0 0 1px #64c306; }
       #list_account .acc:hover {
       background: #098cce;
       }

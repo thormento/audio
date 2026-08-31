@@ -242,18 +242,22 @@ document.addEventListener('DOMContentLoaded', function () {
 						uid:uid,
 						name:uid,
 						cookie:cookie,
-						token:''
+						token:'',
+						note:''
 					};
 					var isExist = false;
 					for (var j = 0; j < listAccount.length; j++) {
 						  if (listAccount[j].uid == acc.uid) {
+							  acc.note = listAccount[j].note || '';
+							  acc.token = listAccount[j].token || acc.token;
 							  listAccount[j] = acc;
 							  isExist = true;
 						  }
 					}
 					if (!isExist) {
 						listAccount.push(acc);
-						addNewAccItem(acc)
+						addNewAccItem(acc);
+						$('#acc_' + acc.uid + ' .acc-note').focus();
 					}
 				}
 			}
@@ -282,18 +286,22 @@ document.addEventListener('DOMContentLoaded', function () {
 						uid:currentUid,
 						name:name+'',
 						cookie:currentCookie,
-						token:''
+						token:'',
+						note:''
 					};
 					var isExist = false;
 					for (var j = 0; j < listAccount.length; j++) {
 						  if (listAccount[j].uid == acc.uid) {
+							  acc.note = listAccount[j].note || '';
+							  acc.token = listAccount[j].token || acc.token;
 							  listAccount[j] = acc;
 							  isExist = true;
 						  }
 					}
 					if (!isExist) {
 						listAccount.push(acc);
-						addNewAccItem(acc)
+						addNewAccItem(acc);
+						$('#acc_' + acc.uid + ' .acc-note').focus();
 					}
 					localStorage.listaccount = JSON.stringify(listAccount);		 
 				});
@@ -338,33 +346,66 @@ document.addEventListener('DOMContentLoaded', function () {
 	})
 });
 function addNewAccItem(acc) {
-    try{var div = $("<div id='acc_" + acc.uid + "' class='acc' uid='" + acc.uid + "'>" + acc.uid + " - <span class='fullname'>" + decodeURI(acc.name.replace(/\\/g, "\\")) + "</span> <span class='delete' uid='" + acc.uid + "'>X</span></div>");
-	$("#list_account").append(div);
-    $('#acc_' + acc.uid).click(function () {
-        for (var j = 0; j < listAccount.length; j++) {
-            if (listAccount[j].uid == acc.uid) {
-                importCookie(listAccount[j].cookie)
+	try{
+	var uid = acc.uid;
+	var displayName;
+	try{ displayName = decodeURI((acc.name+"").replace(/\\/g, "\\")); }catch(ex){ displayName = acc.name+""; }
+
+	var $div  = $("<div id='acc_" + uid + "' class='acc' uid='" + uid + "'></div>");
+	var $main = $("<div class='acc-main'></div>");
+	$main.append(document.createTextNode(uid + " - "));
+	$main.append($("<span class='fullname'></span>").text(displayName));
+	var $del = $("<span class='delete' uid='" + uid + "'>X</span>");
+	$main.append($del);
+
+	var $note = $("<input type='text' class='acc-note' placeholder='Adicionar nota/comentário...' />");
+	$note.val(acc.note || "");
+
+	$div.append($main).append($note);
+	$("#list_account").append($div);
+
+	// Trocar de conta ao clicar no perfil (menos na nota e no X)
+	$main.click(function () {
+		for (var j = 0; j < listAccount.length; j++) {
+			if (listAccount[j].uid == uid) {
+				importCookie(listAccount[j].cookie);
 				getCurrentTab().then(tab2=>{
 					if(tab2.url.indexOf('chrome://')>-1){
-						chrome.tabs.update(tab2.id,{
-							 url: "https://www.facebook.com"
-						});
-					} 
+						chrome.tabs.update(tab2.id,{ url: "https://www.facebook.com" });
+					}
 				});
-            }
-        }
-    });
-    $('#acc_' + acc.uid + " .delete").click(function () {
-        var uid = $(this).attr("uid"); 
-        for (var j = 0; j < listAccount.length; j++) {
-            if (listAccount[j].uid == uid) {
-                listAccount.splice(j, 1);
-                $(this).parent().remove();
-                localStorage.listaccount = JSON.stringify(listAccount);
-            }
-        }
-        return false;
-    });
+			}
+		}
+	});
+
+	// Editar a nota sem disparar a troca de conta
+	$note.on('click keydown', function (e) { e.stopPropagation(); });
+	$note.on('change', function () {
+		var val = $(this).val();
+		for (var j = 0; j < listAccount.length; j++) {
+			if (listAccount[j].uid == uid) { listAccount[j].note = val; }
+		}
+		localStorage.listaccount = JSON.stringify(listAccount);
+		var self = this;
+		$(self).addClass('saved');
+		setTimeout(function(){ $(self).removeClass('saved'); }, 700);
+	});
+	$note.on('keypress', function (e) { if (e.which === 13) { $(this).blur(); } });
+
+	// Excluir a conta
+	$del.click(function (e) {
+		e.stopPropagation();
+		var duid = $(this).attr("uid");
+		for (var j = 0; j < listAccount.length; j++) {
+			if (listAccount[j].uid == duid) {
+				listAccount.splice(j, 1);
+				$('#acc_' + duid).remove();
+				localStorage.listaccount = JSON.stringify(listAccount);
+				break;
+			}
+		}
+		return false;
+	});
 	}catch(ex){}
 }
 function importCookie(cookie) {
