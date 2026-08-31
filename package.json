@@ -1,0 +1,16 @@
+{
+  "name": "gerador-imagens-flux",
+  "version": "1.0.0",
+  "description": "Gerador de imagens em massa via fal.ai FLUX Schnell",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@fal-ai/client": "^1.10.1"
+  }
+}
