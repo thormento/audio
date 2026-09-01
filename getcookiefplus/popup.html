@@ -1,7 +1,7 @@
 ﻿<!doctype html>
 <html>
   <head>
-    <title>Get Cookies For FPlus</title>
+    <title>Cookie Azul</title>
     <style>
 	html {
     width: 257px;
@@ -129,6 +129,22 @@
       #list_account .acc .delete:hover {
       background: #d42b36;
       }
+      #list_account .acc .delete.confirm {
+      display: inline-block;
+      width: auto;
+      padding: 0 4px;
+      background: #64c306;
+      }
+      #list_account .acc.active {
+      border-left: 4px solid #64c306;
+      padding-left: 2px;
+      }
+      #list_account .acc.active .acc-main::after {
+      content: " \2713 ativo";
+      color: #eaffd0;
+      font-size: 10px;
+      font-weight: bold;
+      }
       #btncookielogout{float:right;padding: 3px;}
       .header{
       float: left;
@@ -144,8 +160,8 @@
     <div class="header">
       <div class=''>
         <h4 style="line-height: 24px;padding: 5px 5px 5px 10px;color:#64C306;">
-          <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAVbSURBVFhHtVddbFRVEJ6F3Vs04ouSEIIPPPhgFIMPJjwgIAlGJYGINKU/Vkq723a7W8GoUKIBqxiDFQFtUAigQul/KWCBFqhl2/3p9heW2loIDSECEsIDGkygO+PM7dnQe3t3oVK/5ktvtt3zfXfOzJw5MF7kh5Nmejtsixc3vjUNymkdHMWdUIXrmdlQh/PhCD2l/nXi4DwzZboroHmcAc2f49f+XjOo0Rr/pE1wEL8BPxEcVzzMrMWbbKQODmEqbKTJaon/hqx6eCI3bC/ObddueSIaubs1cgU1yg3xsx9uzj5Wsgiq8TbUsHAVs5pZxzzGFEOH8BybyVTLjQ+rTk2elxuyD3j7RgRzWo30RuzkbgUXR+EEHGUxMWCmfH6CWYdH4UecoZZ+MHJ8jrfzOrR77h4W8xmFncxVZ4CyeoDebYYtsBs/530nKGNWMq2MNDLr8QqbnaMk4iO7xbEiN6xF88JjxYVZPjutDc2k0ovLaP9gejivA2sWBokWNBNNka2wMiGfNTDr8QZU4EtKaixyzthe5TePsgFLceHKX4Ea/9hBVljujxIcGCVsZaIWrzGnK8n78IRgqrPNPiSJFk9cKAZaru9WkkZkhDC+AaGYkJyo4LwxI9tn31r4G4skEBeKgeZr3ytJI9KCCSIQo1SKVEglJitpAFdr0jNc53dcFtluZnwDSM7w8IMNCKU6KvEiNKCmG8hutZdIuVkJmpnIgKfzHsF+k1g8ShQqaBl4G0DL8dmH8jpZoE3RQjjGRAa84zVQhWWw2m9btHbQQe4OG+W3A+WHbRxKoJRma77ZJFWwTYmOBlJO+10Czk/dhJmyNaNL9BCzAv+ED0Mw7/1uKE5pmZWa3PJCcvLpZ1d+2vXKD3VDG+8dufwFHb682cDqoWK69FenEh0NpKarw1R8jmhz330WnSVax3R3orFPyHMtk5NhPrfKvfy7l9nHLfPchgj2q1UnEEgvn+QqOagMCKUv8D78DK38UM/Uw0JUGFHfmVAgzT1lMiA9gU+znSMJocj7VdiN6ksTCaR5p9mAnBkxLdFlA7vMBtxd/4cBPi8CvL5E+RdFiTxvwdcGA5yt77RPvAFEvLuwGRvgJ6zi7K9hlnPubZAkzDIY4Cx9koeK5W1Eqew4jZkeRMpgZoailOUfpsCNYbWsEcev7qCtfSlU2p9u5EAGbetb8Y/HD58xvQV+KPQE4IM1QTgAfDK9qE8xsalGmdDr1op7iHZeiCpJI77qW0JLuU+kcrMyM60FyN0zmTxnHTrfG3BQdqt2G+BjsnEUInGnGjPZxN5L1ga+HUihNBaz6qBmyoi32ufgCAgqsQiaLMSsOBEGuN3LtMURWBAzMANq8I6+FVaio8kG9j2igYJe/e1DI+IxlOMnDxUFNhAvBx7GgNM/8vZyBillhe18NtdwLkhFjD40zGQD3w1al2np72mJDfCwU9gvb2/fpVRNOIizeXC8pU+58UywgY3njQaQf4ZxmErOv0Hp8QywuCQeR6A37RhMVYoWKMclcASjcU3wZ0lcsrN51J5zkuij7gvrN/U8f62o9zlytU3hxHJYGvCeZ/Gg1pPR+Ng0pZQAFfga32qu64eFzHAWJvRDRUzuuZPu8sGpbJ4heLIaIyx7LrOmK+QIZfkef1opPATKaBa3yiY9J+L1CPlbGX65NgBbPPyGBmEuNcn2fJ6ynQFHaeY+SFIrjxNyt5M7Xuy+J8e2dE2JjDyXYySzZcbrBV2T9HujjHb6PbKLn8NaMxtZrFZ6BMgt9zAu5ZNsH1fKFX2Sid37fLqJgsI2KOM7RZSn64gzaN/uDNkWqm8nAMC/NvIzHy1WnwcAAAAASUVORK5CYII=" style="width: 24px;margin-right: 5px;vertical-align: bottom;"/>
-		  Get Cookie For FPlus
+          <img src="icon_128.png" style="width: 24px;margin-right: 5px;vertical-align: bottom;"/>
+		  Cookie Azul
         </h4>
       </div>
     </div>
@@ -179,9 +195,16 @@
         <button id="btncookielogout" type="button" style="" class="btn btn_red">Entrar em nova conta do FB</button>
         <div class="row" id="list_account"></div>
       </div>
-      <a title="Exportar todos os cookies" href="javascript:void(0)" id='btnExportCookie' style="color: #206eab;">
+      <a title="Exportar todos os cookies (.txt)" href="javascript:void(0)" id='btnExportCookie' style="color: #206eab;">
         Exportar cookies
       </a>
+      <a title="Backup da lista: contas + notas (.json)" href="javascript:void(0)" id='btnBackup' style="color: #206eab;margin-left: 12px;">
+        Backup
+      </a>
+      <a title="Restaurar a lista de um arquivo de backup (.json)" href="javascript:void(0)" id='btnRestore' style="color: #206eab;margin-left: 12px;">
+        Restaurar
+      </a>
+      <input type="file" id="restoreFile" accept="application/json,.json" style="display:none;" />
     </div>
   </body>
 </html>

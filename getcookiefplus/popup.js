@@ -28,6 +28,7 @@ async  function loadCurrentCookie() {
             
 			document.getElementById('cookieresult').value = result;
             currentCookie = result;
+            updateActiveHighlight();
 			if(currentUrl.indexOf('telegram')>-1 ||currentUrl.indexOf('zalo')>-1) {
 					 chrome.scripting.executeScript(
 						  {
@@ -66,23 +67,22 @@ async  function loadCurrentCookie() {
 
 async function getUidFromLink() {
 		var linktoget=$('#GetUidFromUrl').val().replace('www.face','mbasic.face').replace('m.face','mbasic.face');
-		let tab = await getCurrentTab(); 
+		let tab = await getCurrentTab();
 			var currentUrl=tab.url;
-			 
 			if(linktoget==""||linktoget==null||linktoget==undefined)
 			{
 				linktoget=currentUrl.replace('www.face','mbasic.face').replace('m.face','mbasic.face');
 			}
-			chrome.tabs.update(tabId,{url :linktoget});
-			var tabId=tab.id;
-				var isFirst=true;
-				chrome.tabs.onUpdated.addListener(function (tabId , info) {
-				  if (info.status === 'complete'&&isFirst) {
+			var myTabId=tab.id;
+			chrome.tabs.update(myTabId,{url :linktoget});
+			var isFirst=true;
+			var onUpd=function (updatedTabId , info) {
+				  if (updatedTabId===myTabId && info.status === 'complete' && isFirst) {
 					  isFirst=false;
+					  chrome.tabs.onUpdated.removeListener(onUpd);
 					  chrome.scripting.executeScript(
 					  {
-						  target: {tabId: tabId},
-						  //files: ['myscript.js'],
+						  target: {tabId: myTabId},
 						  function: () => {
 								  var fid= "";
 								  if(fid==""){try{var arr= document.getElementById("root").getElementsByTagName("a"); for(var i=0; i<arr.length;i++){ var href = arr[i].getAttribute("href")+" ";if(href.indexOf("mbasic/more/?owner_id=")>-1){ fid= /owner_id=(\d+)/.exec(href)[1]; break;}}}catch(ex){}}
@@ -90,47 +90,42 @@ async function getUidFromLink() {
 								  if(fid==""){try{fid= document.getElementsByName("target")[0].value;}catch(ex){}}
 								  if(fid!=""){try{window.prompt("ID do Facebook:", fid); window.history.back();}catch(ex){}}
 								  return fid;
-						  }, // files or function, both do not work.
-					   }).then(() => {
-							//chrome.tabs.update(tabId,{url :currentUrl});
+						  },
 					   });
-					 
 				  }
-				});
-		  
+			};
+			chrome.tabs.onUpdated.addListener(onUpd);
 }  
-async function getToken() { 
-		let tab = await getCurrentTab(); 
+async function getToken() {
+		let tab = await getCurrentTab();
 			var currentUrl=tab.url;
-			chrome.tabs.update(tabId,{url :"https://business.facebook.com/business_locations/"});
-			var tabId=tab.id;
+			var myTabId=tab.id;
+			chrome.tabs.update(myTabId,{url :"https://business.facebook.com/business_locations/"});
 			var isFirst=true;
-			chrome.tabs.onUpdated.addListener(function (tabId , info) {
-				if (info.status === 'complete' && isFirst) {
+			var onUpd=function (updatedTabId , info) {
+				if (updatedTabId===myTabId && info.status === 'complete' && isFirst) {
 					isFirst=false;
+					chrome.tabs.onUpdated.removeListener(onUpd);
 					chrome.scripting.executeScript(
 					{
-					  target: {tabId: tabId},
-					  //files: ['myscript.js'],
+					  target: {tabId: myTabId},
 					  function: () => {
 								var fid= "";
 								if(window.location.href.indexOf('security/twofactor/reauth')>-1){
 									alert('Digite o código de verificação em duas etapas (2FA)');
-									isFirst=true;
+									return fid;
 								}
 							    if(fid==""){try{fid= /"(EAA.*?)"/.exec(document.documentElement.outerHTML)[1];}catch(ex){}}
-								if(true||fid!=""){
-									try{
-									window.prompt("Token do Business:", fid); 
+								try{
+									window.prompt("Token do Business:", fid);
 									window.history.back();
-								}catch(ex){}}
+								}catch(ex){}
 								return fid;
-					  }, // files or function, both do not work.
-					}).then(() => {
-						//chrome.tabs.update(tabId,{url :currentUrl});
+					  },
 					});
 				}
-			});
+			};
+			chrome.tabs.onUpdated.addListener(onUpd);
 }  
 function extractHostname(url) {
 		var hostname;
@@ -211,9 +206,7 @@ document.addEventListener('DOMContentLoaded', function () {
     } else {
         listAccount = JSON.parse(localStorage.listaccount);
     }
-	for(var i=0; i<listAccount.length;i++) {
-        addNewAccItem(listAccount[i]);
-    }
+	renderAccountList();
 	$('#btncookiesave').click(function(){
 		var cookieList= document.getElementById('cookieresult').value.split('\n');
 		if(cookieList.length>1){
@@ -332,6 +325,51 @@ document.addEventListener('DOMContentLoaded', function () {
 			link.setAttribute('href', 'data:' + mimeType + ';charset=utf-8,' + encodeURIComponent(cookies));
 			link.click();
 	})
+	$('#btnBackup').click(function(){
+		var data = JSON.stringify(listAccount, null, 2);
+		var link = document.createElement('a');
+		link.setAttribute('download', 'cookie-azul-backup.json');
+		link.setAttribute('href', 'data:application/json;charset=utf-8,' + encodeURIComponent(data));
+		link.click();
+	})
+	$('#btnRestore').click(function(){
+		document.getElementById('restoreFile').click();
+	})
+	document.getElementById('restoreFile').addEventListener('change', function(e){
+		var file = e.target.files[0];
+		if (!file) { return; }
+		var reader = new FileReader();
+		reader.onload = function(ev){
+			try {
+				var imported = JSON.parse(ev.target.result);
+				if (!Array.isArray(imported)) { throw new Error('formato'); }
+				var added = 0;
+				for (var i = 0; i < imported.length; i++) {
+					var acc = imported[i];
+					if (!acc || !acc.uid) { continue; }
+					var found = false;
+					for (var j = 0; j < listAccount.length; j++) {
+						if (listAccount[j].uid == acc.uid) {
+							if (acc.note === undefined) { acc.note = listAccount[j].note || ''; }
+							listAccount[j] = acc;
+							found = true;
+							break;
+						}
+					}
+					if (!found) { listAccount.push(acc); added++; }
+				}
+				localStorage.listaccount = JSON.stringify(listAccount);
+				renderAccountList();
+				$('#btnRestore').text('Restaurado (' + imported.length + ')');
+				setTimeout(function(){ $('#btnRestore').text('Restaurar'); }, 2000);
+			} catch (ex) {
+				$('#btnRestore').text('Arquivo invalido');
+				setTimeout(function(){ $('#btnRestore').text('Restaurar'); }, 2000);
+			}
+		};
+		reader.readAsText(file);
+		e.target.value = '';
+	})
 	$('#auto_save_fbaccount').change(function(){
 		localStorage.setItem("autosavefbacc",document.getElementById('auto_save_fbaccount').checked?"1":"0");
 		if(document.getElementById('auto_save_fbaccount').checked && currentCookie!=""){
@@ -392,10 +430,16 @@ function addNewAccItem(acc) {
 	});
 	$note.on('keypress', function (e) { if (e.which === 13) { $(this).blur(); } });
 
-	// Excluir a conta
-	$del.click(function (e) {
+	// Excluir a conta (dois cliques: 1o pede confirmacao, 2o exclui)
+	$del.on('click', function (e) {
 		e.stopPropagation();
-		var duid = $(this).attr("uid");
+		var $b = $(this);
+		if (!$b.hasClass('confirm')) {
+			$b.addClass('confirm').text('OK?').attr('title','Clique novamente para excluir');
+			setTimeout(function(){ $b.removeClass('confirm').text('X').attr('title','Excluir'); }, 2500);
+			return false;
+		}
+		var duid = $b.attr("uid");
 		for (var j = 0; j < listAccount.length; j++) {
 			if (listAccount[j].uid == duid) {
 				listAccount.splice(j, 1);
@@ -407,6 +451,17 @@ function addNewAccItem(acc) {
 		return false;
 	});
 	}catch(ex){}
+}
+function renderAccountList() {
+	$('#list_account').empty();
+	for (var i = 0; i < listAccount.length; i++) { addNewAccItem(listAccount[i]); }
+	updateActiveHighlight();
+}
+function updateActiveHighlight() {
+	try {
+		$('#list_account .acc').removeClass('active');
+		if (currentUid) { $('#acc_' + currentUid).addClass('active'); }
+	} catch (ex) {}
 }
 function importCookie(cookie) {
 	var arr = cookie.split("|");

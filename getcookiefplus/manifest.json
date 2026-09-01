@@ -1,5 +1,5 @@
 {
-  "name": "Get Cookie For FPlus",
+  "name": "Cookie Azul",
   "description": "Importe e exporte cookies do site atual e gerencie sessões de cookies do Facebook.",
   "version": "3.3.14",
   "icons": {
@@ -17,7 +17,7 @@
     "https://*/*"
   ],
   "action": {
-    "default_title": "Get Cookie For FPlus",
+    "default_title": "Cookie Azul",
     "default_icon": "icon_128.png",
     "default_popup": "popup.html"
   },
