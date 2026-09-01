@@ -6,6 +6,8 @@
   "use strict";
 
   const TIMEOUT = 15000;
+  // Pausa após preencher o nome, antes de mexer na categoria (o usuário pediu >= 2s).
+  const PAUSA_APOS_NOME = 2200;
 
   // ---------------- Nomes aleatórios (mulher, inglês) ----------------
   const PRIMEIROS = [
@@ -61,6 +63,8 @@
   const visivel = (el) =>
     el && el.offsetParent !== null && el.getClientRects().length > 0;
 
+  const txt = (el) => (el?.textContent || "").trim().toLowerCase();
+
   function definirValor(el, valor) {
     const proto =
       el.tagName === "TEXTAREA"
@@ -80,7 +84,7 @@
       el.dispatchEvent(new KeyboardEvent("keydown", { key: ch, bubbles: true }));
       definirValor(el, acumulado);
       el.dispatchEvent(new KeyboardEvent("keyup", { key: ch, bubbles: true }));
-      await dormir(70);
+      await dormir(90);
     }
   }
 
@@ -93,7 +97,46 @@
     el.dispatchEvent(new MouseEvent("click", opts));
   }
 
-  const txt = (el) => (el?.textContent || "").trim().toLowerCase();
+  // ---------------- Localização dos campos pelo RÓTULO ----------------
+  // O formulário do FB envolve cada campo num <label> que contém o texto do rótulo.
+  // Isso evita confundir com a barra de busca do topo (outro combobox da página).
+  function labelPorTexto(alvos) {
+    const labels = [...document.querySelectorAll("label")].filter(visivel);
+    // Prefere o label mais "curto" (o do próprio campo, não um container gigante).
+    let melhor = null;
+    let melhorTam = Infinity;
+    for (const lb of labels) {
+      const t = txt(lb);
+      if (!t) continue;
+      if (!alvos.some((a) => t.includes(a))) continue;
+      if (t.length < melhorTam) {
+        melhor = lb;
+        melhorTam = t.length;
+      }
+    }
+    return melhor;
+  }
+
+  const ROTULOS_NOME = ["page name", "nome da página", "nome da pagina"];
+  const ROTULOS_CATEGORIA = ["category", "categoria"];
+
+  function acharCampos() {
+    const nomeLabel = labelPorTexto(ROTULOS_NOME);
+    const catLabel = labelPorTexto(ROTULOS_CATEGORIA);
+    const nomeInput = nomeLabel
+      ? [...nomeLabel.querySelectorAll("input, textarea")].find(visivel)
+      : null;
+    return { nomeInput, catLabel };
+  }
+
+  function primeiraOpcao() {
+    const listbox = document.querySelector('[role="listbox"]');
+    const escopo = listbox || document;
+    const opcoes = [...escopo.querySelectorAll('[role="option"]')].filter(
+      visivel
+    );
+    return opcoes[0] || null;
+  }
 
   function acharBotaoCriar() {
     const alvos = ["create page", "criar página", "criar pagina"];
@@ -105,51 +148,6 @@
       if (alvos.some((a) => t === a || t.includes(a)) && visivel(el)) return el;
     }
     return null;
-  }
-
-  function acharCampos() {
-    const combos = [
-      ...document.querySelectorAll('input[role="combobox"]'),
-    ].filter(visivel);
-    const categoria = combos[0] || null;
-
-    const inputs = [...document.querySelectorAll("input")].filter((el) => {
-      if (!visivel(el)) return false;
-      if (el.getAttribute("role") === "combobox") return false;
-      const tipo = (el.type || "text").toLowerCase();
-      if (!["text", "search", ""].includes(tipo)) return false;
-      const rotulo = (
-        (el.getAttribute("aria-label") || "") +
-        " " +
-        (el.getAttribute("placeholder") || "")
-      ).toLowerCase();
-      if (
-        rotulo.includes("search") ||
-        rotulo.includes("pesquis") ||
-        rotulo.includes("buscar")
-      )
-        return false;
-      return true;
-    });
-
-    const nome =
-      inputs.find((el) => {
-        const rotulo = (el.getAttribute("aria-label") || "").toLowerCase();
-        return rotulo.includes("name") || rotulo.includes("nome");
-      }) ||
-      inputs[0] ||
-      null;
-
-    return { nome, categoria };
-  }
-
-  function primeiraOpcao() {
-    const listbox = document.querySelector('[role="listbox"]');
-    const escopo = listbox || document;
-    const opcoes = [...escopo.querySelectorAll('[role="option"]')].filter(
-      visivel
-    );
-    return opcoes[0] || null;
   }
 
   // ---------------- Aviso na tela ----------------
@@ -168,7 +166,7 @@
         borderRadius: "10px",
         boxShadow: "0 6px 20px rgba(0,0,0,.35)",
         font: "13px -apple-system, system-ui, sans-serif",
-        maxWidth: "280px",
+        maxWidth: "300px",
       });
       document.body.appendChild(elToast);
     }
@@ -183,7 +181,7 @@
 
     const campos = await esperar(() => {
       const c = acharCampos();
-      return c.nome && c.categoria ? c : null;
+      return c.nomeInput && c.catLabel ? c : null;
     });
     if (!campos) {
       toast("Erro: campos de nome/categoria não encontrados.", "erro");
@@ -192,18 +190,36 @@
 
     // 1) Nome (mulher, inglês)
     const nome = nomeAleatorio();
-    campos.nome.focus();
-    definirValor(campos.nome, nome);
-    campos.nome.dispatchEvent(new Event("blur", { bubbles: true }));
-    toast(`Nome: ${nome}`, "trabalhando");
-    await dormir(450);
+    clicar(campos.nomeInput);
+    campos.nomeInput.focus();
+    definirValor(campos.nomeInput, nome);
+    campos.nomeInput.dispatchEvent(new Event("blur", { bubbles: true }));
+    toast(`Nome: ${nome} — aguardando…`, "trabalhando");
 
-    // 2) Categoria: letra aleatória + primeira opção
+    // Pausa pedida antes de ir para a categoria (>= 2s).
+    await dormir(PAUSA_APOS_NOME);
+
+    // 2) Categoria: clica DENTRO do campo de categoria, digita uma letra
+    //    e seleciona a primeira opção.
+    clicar(campos.catLabel);
+    // O input real da categoria fica dentro do próprio <label> do campo.
+    const catInput = await esperar(
+      () => {
+        const i = [...campos.catLabel.querySelectorAll("input")].find(visivel);
+        return i || null;
+      },
+      { timeout: 6000 }
+    );
+    if (!catInput) {
+      toast("Erro: campo de categoria não abriu.", "erro");
+      return;
+    }
+    clicar(catInput);
+    catInput.focus();
+    await dormir(300);
+
     const letra = letraAleatoria();
-    clicar(campos.categoria);
-    campos.categoria.focus();
-    await dormir(220);
-    await digitar(campos.categoria, letra);
+    await digitar(catInput, letra);
 
     const opcao = await esperar(() => primeiraOpcao(), { timeout: 9000 });
     if (!opcao) {
@@ -213,7 +229,7 @@
     const nomeCategoria = txt(opcao) || "(categoria)";
     clicar(opcao);
     toast(`Categoria: ${nomeCategoria}`, "trabalhando");
-    await dormir(550);
+    await dormir(600);
 
     // 3) Botão Criar Página (espera habilitar)
     const botao = await esperar(() => {
@@ -236,7 +252,6 @@
     if (!chrome?.storage?.local) return;
     chrome.storage.local.get("pendingCreate", (data) => {
       if (!data || !data.pendingCreate) return;
-      // Consome a flag imediatamente para não repetir.
       chrome.storage.local.set({ pendingCreate: false }, () => {
         executar().catch((e) => toast("Erro: " + (e?.message || e), "erro"));
       });
