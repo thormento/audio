@@ -371,22 +371,23 @@
   // ---------------- Disparo: só roda se houver pedido pendente ----------------
   function iniciar() {
     if (!chrome?.storage?.local) return;
-    chrome.storage.local.get("pendingCreate", (data) => {
+    chrome.storage.local.get(["pendingCreate", "pendingStep"], (data) => {
       if (!data || !data.pendingCreate) return;
+      const stepId = data.pendingStep;
       chrome.storage.local.set({ pendingCreate: false }, () => {
         executar()
-          .then(() => concluir(true))
+          .then(() => concluir(true, stepId))
           .catch((e) => {
             toast("Erro: " + (e?.message || e), "erro");
-            concluir(false);
+            concluir(false, stepId);
           });
       });
     });
   }
 
-  function concluir(ok) {
+  function concluir(ok, stepId) {
     try {
-      chrome.runtime.sendMessage({ action: "criacaoConcluida", ok: ok });
+      chrome.runtime.sendMessage({ action: "criacaoConcluida", ok: ok, stepId: stepId });
     } catch (e) {}
   }
 
