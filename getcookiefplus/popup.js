@@ -389,44 +389,67 @@ document.addEventListener('DOMContentLoaded', function () {
 		reader.readAsText(file);
 		e.target.value = '';
 	})
-	$('#btncriarpagina').click(function(){
-		var $btn = $(this);
-		var $s = $('#statuscriar');
-		$btn.prop('disabled', true);
-		$s.text('Verificando perfil ativo...');
-		// Descobre o perfil logado no Facebook (cookie c_user) e conta +1 tentativa nele
-		chrome.cookies.get({ url: 'https://www.facebook.com', name: 'c_user' }, function (cookie) {
-			var uid = (cookie && cookie.value) ? cookie.value : currentUid;
-			var acc = null;
-			if (uid) {
-				for (var j = 0; j < listAccount.length; j++) {
-					if (listAccount[j].uid == uid) {
-						listAccount[j].tries = (parseInt(listAccount[j].tries, 10) || 0) + 1;
-						acc = listAccount[j];
-						$('#acc_' + uid + ' .try-val').text(String(listAccount[j].tries));
-						break;
+	function reconcileAutoTries(){
+		try{
+			if(!chrome.storage || !chrome.storage.local) return;
+			chrome.storage.local.get(['pendingAutoTries','cicloAtivo'], function(d){
+				if(d && d.cicloAtivo) return; // so aplica quando o ciclo terminou
+				var map = d && d.pendingAutoTries;
+				if(!map) return;
+				var has=false, changed=false;
+				for(var uid in map){ if(map.hasOwnProperty(uid)){ has=true;
+					for(var j=0;j<listAccount.length;j++){
+						if(listAccount[j].uid==uid){
+							listAccount[j].tries = (parseInt(listAccount[j].tries,10)||0) + (parseInt(map[uid],10)||0);
+							changed=true;
+						}
 					}
-				}
-				if (acc) { localStorage.listaccount = JSON.stringify(listAccount); }
-			}
-			$s.text(acc ? ('Tentativa +1 (total ' + acc.tries + ') - abrindo o Facebook...')
-			            : 'Abrindo o Facebook... (perfil ativo nao esta salvo na lista)');
-			// Abre a aba de criacao e roda a automacao
-			chrome.runtime.sendMessage({ action: 'criarPagina' }, function (resp) {
-				if (chrome.runtime.lastError) {
-					$s.text('Erro: ' + chrome.runtime.lastError.message);
-					$btn.prop('disabled', false);
-					return;
-				}
-				if (resp && resp.ok) {
-					setTimeout(function () { window.close(); }, 900);
-				} else {
-					$s.text('Nao foi possivel iniciar.');
-					$btn.prop('disabled', false);
-				}
+				}}
+				if(has){ chrome.storage.local.remove('pendingAutoTries'); }
+				if(changed){ localStorage.listaccount = JSON.stringify(listAccount); renderAccountList(); }
 			});
+		}catch(ex){}
+	}
+
+	function iniciarCicloTodos(){
+		var $btn = $('#btncriarpagina');
+		var $s = $('#statuscriar');
+		var profiles = [];
+		for (var i = 0; i < listAccount.length; i++) {
+			if (listAccount[i].cookie) {
+				profiles.push({ uid: listAccount[i].uid, name: listAccount[i].name, cookie: listAccount[i].cookie });
+			}
+		}
+		if (profiles.length === 0) { $s.text('Nenhum perfil salvo na lista.'); return; }
+		$btn.prop('disabled', true);
+		$s.text('Iniciando ciclo em ' + profiles.length + ' perfil(is)...');
+		chrome.runtime.sendMessage({ action: 'iniciarCicloTodos', profiles: profiles }, function (resp) {
+			if (chrome.runtime.lastError) { $s.text('Erro: ' + chrome.runtime.lastError.message); $btn.prop('disabled', false); return; }
+			$s.text('Ciclo iniciado - pode fechar o popup, ele roda sozinho.');
 		});
-	})
+	}
+
+	$('#btncriarpagina').click(function(){ iniciarCicloTodos(); });
+	$('#pararCiclo').click(function(){
+		chrome.runtime.sendMessage({ action: 'pararCiclo' }, function () {
+			$('#statuscriar').text('Ciclo interrompido.');
+		});
+	});
+
+	// Reconcilia tentativas do ciclo (quando terminado) e mostra status enquanto aberto
+	reconcileAutoTries();
+	setInterval(function(){
+		try{
+			if(!chrome.storage || !chrome.storage.local) return;
+			chrome.storage.local.get(['cicloAtivo','cicloStatus'], function(d){
+				var ativo = d && d.cicloAtivo;
+				if(d && d.cicloStatus){ $('#statuscriar').text(d.cicloStatus); }
+				if(ativo){ $('#btncriarpagina').prop('disabled', true); $('#pararCiclo').show(); }
+				else { $('#btncriarpagina').prop('disabled', false); $('#pararCiclo').hide(); reconcileAutoTries(); }
+			});
+		}catch(ex){}
+	}, 1200);
+
 	$('#auto_save_fbaccount').change(function(){
 		localStorage.setItem("autosavefbacc",document.getElementById('auto_save_fbaccount').checked?"1":"0");
 		if(document.getElementById('auto_save_fbaccount').checked && currentCookie!=""){

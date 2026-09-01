@@ -374,9 +374,20 @@
     chrome.storage.local.get("pendingCreate", (data) => {
       if (!data || !data.pendingCreate) return;
       chrome.storage.local.set({ pendingCreate: false }, () => {
-        executar().catch((e) => toast("Erro: " + (e?.message || e), "erro"));
+        executar()
+          .then(() => concluir(true))
+          .catch((e) => {
+            toast("Erro: " + (e?.message || e), "erro");
+            concluir(false);
+          });
       });
     });
+  }
+
+  function concluir(ok) {
+    try {
+      chrome.runtime.sendMessage({ action: "criacaoConcluida", ok: ok });
+    } catch (e) {}
   }
 
   if (document.readyState === "loading") {
