@@ -97,6 +97,43 @@
     el.dispatchEvent(new MouseEvent("click", opts));
   }
 
+  // Clique "real" pelas coordenadas do elemento: atinge a camada que está por cima
+  // (o FB coloca uma div transparente sobre o botão para capturar o clique).
+  function clicarReal(el) {
+    try {
+      el.scrollIntoView({ block: "center", inline: "center" });
+    } catch (_) {}
+    const r = el.getBoundingClientRect();
+    const x = r.left + r.width / 2;
+    const y = r.top + r.height / 2;
+    const alvo = document.elementFromPoint(x, y) || el;
+    const opts = {
+      bubbles: true,
+      cancelable: true,
+      view: window,
+      clientX: x,
+      clientY: y,
+      button: 0,
+    };
+    const seq = [
+      ["pointerover", PointerEvent],
+      ["pointerenter", PointerEvent],
+      ["pointerdown", PointerEvent],
+      ["mousedown", MouseEvent],
+      ["pointerup", PointerEvent],
+      ["mouseup", MouseEvent],
+      ["click", MouseEvent],
+    ];
+    for (const [type, Ctor] of seq) {
+      alvo.dispatchEvent(new Ctor(type, opts));
+    }
+    if (typeof el.click === "function") {
+      try {
+        el.click();
+      } catch (_) {}
+    }
+  }
+
   // Dispara uma tecla especial (ex.: ArrowDown, Enter) com keyCode para o FB reconhecer.
   function teclar(el, key, code, keyCode) {
     for (const type of ["keydown", "keypress", "keyup"]) {
@@ -301,11 +338,12 @@
     await esperar(() => (estaDesabilitado(botao) ? null : true), {
       timeout: 6000,
     });
-    clicar(botao);
-    await dormir(400);
-    // Reforço: se o botão ainda estiver na tela, tenta clicar mais uma vez.
+    // Clique pelas coordenadas (vence a camada de captura do FB).
+    clicarReal(botao);
+    await dormir(600);
+    // Reforço: se o botão ainda estiver na tela, tenta de novo.
     const aindaBotao = acharBotaoCriar();
-    if (aindaBotao) clicar(aindaBotao);
+    if (aindaBotao) clicarReal(aindaBotao);
     toast(`✓ Criando: "${nome}" · ${nomeCategoria}`, "ok");
   }
 
