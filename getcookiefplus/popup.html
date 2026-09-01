@@ -4,7 +4,7 @@
     <title>Cookie Azul</title>
     <style>
 	html {
-    width: 340px;
+    width: 384px;
 }
       body {
       overflow: hidden;
@@ -64,7 +64,7 @@
       line-height: 1.5em;
       }
       .main {
-      width: 320px;
+      width: 364px;
       padding: 10px;
       }
       h4 {
@@ -93,12 +93,13 @@
       #list_account .acc-row2 {
       display: flex;
       align-items: center;
+      flex-wrap: wrap;
       gap: 4px;
       margin-top: 4px;
       }
       #list_account .acc-note {
-      flex: 1 1 auto;
-      min-width: 0;
+      flex: 1 1 90px;
+      min-width: 84px;
       box-sizing: border-box;
       padding: 2px 5px;
       border: 1px solid rgba(255,255,255,0.6);
@@ -166,6 +167,29 @@
       }
       #list_account .try-up { background: #206eab; }
       #list_account .try-up:hover { background: #00aaff; }
+      #list_account .bmctl {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      background: rgba(255,255,255,0.92);
+      border-radius: 3px;
+      padding: 1px 3px;
+      }
+      #list_account .bm-btn {
+      border: 0;
+      color: #fff;
+      min-width: 30px;
+      height: 17px;
+      line-height: 1;
+      border-radius: 2px;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: bold;
+      padding: 0 4px;
+      }
+      #list_account .bm-btn.no { background: #e64b32; }
+      #list_account .bm-btn.yes { background: #64c306; }
       #list_account .acc-note:focus { outline: none; border-color: #394959; }
       #list_account .acc-note.saved { border-color: #64c306; box-shadow: 0 0 0 1px #64c306; }
       #list_account .acc:hover {

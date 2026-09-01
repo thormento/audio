@@ -242,7 +242,8 @@ document.addEventListener('DOMContentLoaded', function () {
 						token:'',
 						note:'',
 						pages:0,
-						tries:0
+						tries:0,
+						bm:false
 					};
 					var isExist = false;
 					for (var j = 0; j < listAccount.length; j++) {
@@ -251,6 +252,7 @@ document.addEventListener('DOMContentLoaded', function () {
 							  acc.token = listAccount[j].token || acc.token;
 							  acc.pages = (listAccount[j].pages !== undefined ? listAccount[j].pages : (acc.pages || 0));
 							  acc.tries = (listAccount[j].tries !== undefined ? listAccount[j].tries : (acc.tries || 0));
+							  acc.bm = (listAccount[j].bm !== undefined ? listAccount[j].bm : (acc.bm || false));
 							  listAccount[j] = acc;
 							  isExist = true;
 						  }
@@ -290,7 +292,8 @@ document.addEventListener('DOMContentLoaded', function () {
 						token:'',
 						note:'',
 						pages:0,
-						tries:0
+						tries:0,
+						bm:false
 					};
 					var isExist = false;
 					for (var j = 0; j < listAccount.length; j++) {
@@ -299,6 +302,7 @@ document.addEventListener('DOMContentLoaded', function () {
 							  acc.token = listAccount[j].token || acc.token;
 							  acc.pages = (listAccount[j].pages !== undefined ? listAccount[j].pages : (acc.pages || 0));
 							  acc.tries = (listAccount[j].tries !== undefined ? listAccount[j].tries : (acc.tries || 0));
+							  acc.bm = (listAccount[j].bm !== undefined ? listAccount[j].bm : (acc.bm || false));
 							  listAccount[j] = acc;
 							  isExist = true;
 						  }
@@ -365,6 +369,7 @@ document.addEventListener('DOMContentLoaded', function () {
 							if (acc.note === undefined) { acc.note = listAccount[j].note || ''; }
 							if (acc.pages === undefined) { acc.pages = listAccount[j].pages !== undefined ? listAccount[j].pages : 0; }
 							if (acc.tries === undefined) { acc.tries = listAccount[j].tries !== undefined ? listAccount[j].tries : 0; }
+							if (acc.bm === undefined) { acc.bm = listAccount[j].bm !== undefined ? listAccount[j].bm : false; }
 							listAccount[j] = acc;
 							found = true;
 							break;
@@ -404,6 +409,7 @@ function addNewAccItem(acc) {
 	try{ displayName = decodeURI((acc.name+"").replace(/\\/g, "\\")); }catch(ex){ displayName = acc.name+""; }
 	var pages = (acc.pages === undefined ? 0 : acc.pages);
 	var tries = (acc.tries === undefined ? 0 : acc.tries);
+	var bm = (acc.bm === undefined ? false : !!acc.bm);
 
 	var $div  = $("<div id='acc_" + uid + "' class='acc' uid='" + uid + "'></div>");
 	var $main = $("<div class='acc-main'></div>");
@@ -429,7 +435,12 @@ function addNewAccItem(acc) {
 	var $tup   = $("<button type='button' class='pg-btn try-up'>+</button>");
 	$tctrl.append($("<span class='pg-label'>tent</span>")).append($tval).append($tup);
 
-	$row2.append($note).append($ctrl).append($tctrl);
+	// Indicador de BM (Sim/Não) - clique alterna
+	var $bmctl = $("<div class='bmctl' title='Este perfil tem BM? Clique para alternar'></div>");
+	var $bmbtn = $("<button type='button' class='bm-btn'></button>");
+	$bmctl.append($("<span class='pg-label'>bm</span>")).append($bmbtn);
+
+	$row2.append($note).append($ctrl).append($tctrl).append($bmctl);
 	$div.append($main).append($row2);
 	$("#list_account").append($div);
 
@@ -453,6 +464,18 @@ function addNewAccItem(acc) {
 		localStorage.listaccount = JSON.stringify(listAccount);
 	}
 	paintTries();
+
+	function paintBm(){
+		if (bm) { $bmbtn.text('Sim').addClass('yes').removeClass('no'); }
+		else { $bmbtn.text('Não').addClass('no').removeClass('yes'); }
+	}
+	function saveBm(){
+		for (var j = 0; j < listAccount.length; j++) {
+			if (listAccount[j].uid == uid) { listAccount[j].bm = bm; }
+		}
+		localStorage.listaccount = JSON.stringify(listAccount);
+	}
+	paintBm();
 
 	// Trocar de conta ao clicar no perfil (menos na nota, contador e X)
 	$main.click(function () {
@@ -482,6 +505,14 @@ function addNewAccItem(acc) {
 		if (pages === 'nao') { pages = 0; }
 		else { pages = pages + 1; }
 		paintPages(); savePages();
+		return false;
+	});
+
+	// BM: alterna Sim/Não
+	$bmbtn.on('click', function (e) {
+		e.stopPropagation();
+		bm = !bm;
+		paintBm(); saveBm();
 		return false;
 	});
 
