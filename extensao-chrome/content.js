@@ -9,32 +9,53 @@
   // Pausa após preencher o nome, antes de mexer na categoria (o usuário pediu >= 2s).
   const PAUSA_APOS_NOME = 2200;
 
-  // ---------------- Nomes aleatórios (mulher, inglês) ----------------
+  // ---------------- Nomes aleatórios (mulher americana, 2 palavras) ----------------
+  // Apenas primeiros nomes claramente femininos e comuns nos EUA — evitando os que
+  // também são palavra comum (Nova, Genesis, Willow, Hazel, Violet, Aurora, Luna...).
   const PRIMEIROS = [
     "Emma", "Olivia", "Ava", "Isabella", "Sophia", "Mia", "Charlotte", "Amelia",
-    "Harper", "Evelyn", "Abigail", "Emily", "Ella", "Elizabeth", "Camila", "Luna",
-    "Sofia", "Avery", "Mila", "Aria", "Scarlett", "Penelope", "Layla", "Chloe",
-    "Victoria", "Madison", "Eleanor", "Grace", "Nora", "Riley", "Zoey", "Hannah",
-    "Hazel", "Lily", "Ellie", "Violet", "Lucy", "Stella", "Aurora", "Natalie",
-    "Zoe", "Leah", "Hailey", "Audrey", "Savannah", "Brooklyn", "Bella", "Claire",
-    "Skylar", "Lucia", "Paisley", "Everly", "Anna", "Caroline", "Nova", "Genesis",
-    "Emilia", "Kennedy", "Samantha", "Maya", "Willow", "Kinsley", "Naomi", "Aaliyah",
+    "Harper", "Evelyn", "Abigail", "Emily", "Ella", "Elizabeth", "Avery", "Scarlett",
+    "Madison", "Victoria", "Chloe", "Penelope", "Eleanor", "Nora", "Hannah", "Lucy",
+    "Natalie", "Zoe", "Leah", "Hailey", "Audrey", "Savannah", "Claire", "Caroline",
+    "Samantha", "Anna", "Kennedy", "Ellie", "Aubrey", "Addison", "Sarah", "Katherine",
+    "Allison", "Alexis", "Julia", "Alexandra", "Madeline", "Rebecca", "Rachel",
+    "Jessica", "Ashley", "Amanda", "Nicole", "Stephanie", "Lauren", "Danielle",
+    "Vanessa", "Brianna", "Kaitlyn", "Paige", "Molly", "Erin", "Haley", "Sydney",
   ];
+  // Sobrenomes americanos comuns — evitando os que são substantivo comum
+  // (Green, King, Price, Baker, Foster, Bell, Hill, Gray, Young, White...).
   const SOBRENOMES = [
-    "Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Davis",
-    "Rodriguez", "Martinez", "Hernandez", "Lopez", "Gonzalez", "Wilson", "Anderson",
-    "Thomas", "Taylor", "Moore", "Jackson", "Martin", "Lee", "Perez", "Thompson",
-    "White", "Harris", "Sanchez", "Clark", "Ramirez", "Lewis", "Robinson", "Walker",
-    "Young", "Allen", "King", "Wright", "Scott", "Torres", "Hill", "Green", "Adams",
-    "Nelson", "Baker", "Hall", "Rivera", "Campbell", "Mitchell", "Carter", "Roberts",
-    "Turner", "Phillips", "Parker", "Evans", "Edwards", "Collins", "Morgan", "Murphy",
-    "Cooper", "Bailey", "Bell", "Bennett", "Gray", "Hughes", "Price", "Foster",
+    "Johnson", "Williams", "Miller", "Davis", "Wilson", "Anderson", "Thomas",
+    "Taylor", "Moore", "Jackson", "Martin", "Thompson", "Harris", "Robinson",
+    "Walker", "Allen", "Scott", "Adams", "Nelson", "Carter", "Mitchell", "Roberts",
+    "Turner", "Phillips", "Evans", "Edwards", "Collins", "Murphy", "Bennett",
+    "Hughes", "Peterson", "Richardson", "Watson", "Brooks", "Sanders", "Bryant",
+    "Russell", "Griffin", "Hayes", "Myers", "Hamilton", "Graham", "Sullivan",
+    "Wallace", "Simpson", "Stevens", "Tucker", "Porter", "Crawford", "Mason",
+    "Warren", "Dixon", "Gordon", "Holmes", "Robertson", "Reynolds", "Ferguson",
+    "Spencer", "Matthews", "Franklin", "Lawson", "Bishop", "Harrison", "Fisher",
   ];
 
+  // Palavras que o Facebook costuma recusar em nomes de página.
+  // Edite esta lista (em minúsculas): qualquer nome que contenha uma delas é descartado.
+  const PALAVRAS_BLOQUEADAS = [
+    // exemplos — adicione as que você encontrar:
+    // "official", "free", "real",
+  ];
+
+  function nomeBloqueado(nome) {
+    const n = nome.toLowerCase();
+    return PALAVRAS_BLOQUEADAS.some((p) => p && n.includes(p.toLowerCase()));
+  }
+
   function nomeAleatorio() {
-    const a = PRIMEIROS[Math.floor(Math.random() * PRIMEIROS.length)];
-    const b = SOBRENOMES[Math.floor(Math.random() * SOBRENOMES.length)];
-    return `${a} ${b}`;
+    for (let i = 0; i < 80; i++) {
+      const a = PRIMEIROS[Math.floor(Math.random() * PRIMEIROS.length)];
+      const b = SOBRENOMES[Math.floor(Math.random() * SOBRENOMES.length)];
+      const nome = `${a} ${b}`;
+      if (!nomeBloqueado(nome)) return nome;
+    }
+    return `${PRIMEIROS[0]} ${SOBRENOMES[0]}`;
   }
 
   function letraAleatoria() {

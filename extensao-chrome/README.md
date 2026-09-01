@@ -37,6 +37,11 @@ Um aviso no canto inferior direito da aba mostra o nome gerado, a categoria e se
 ## Personalizar
 
 - **Nomes:** edite as listas `PRIMEIROS` e `SOBRENOMES` no topo de `content.js`.
+  Por padrão são nomes femininos americanos comuns e sempre saem em duas palavras
+  (nome + sobrenome).
+- **Palavras bloqueadas:** se o Facebook recusar algum nome, adicione a palavra
+  (em minúsculas) na lista `PALAVRAS_BLOQUEADAS` em `content.js`. Qualquer nome que
+  contenha uma dessas palavras é descartado e outro é sorteado.
 - **Tempo de espera:** ajuste `TIMEOUT` em `content.js`.
 
 ## Observações
