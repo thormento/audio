@@ -392,20 +392,33 @@ document.addEventListener('DOMContentLoaded', function () {
 	function reconcileAutoTries(){
 		try{
 			if(!chrome.storage || !chrome.storage.local) return;
-			chrome.storage.local.get(['pendingAutoTries','cicloAtivo'], function(d){
+			chrome.storage.local.get(['pendingAutoTries','pendingAutoPages','cicloAtivo'], function(d){
 				if(d && d.cicloAtivo) return; // so aplica quando o ciclo terminou
-				var map = d && d.pendingAutoTries;
-				if(!map) return;
-				var has=false, changed=false;
-				for(var uid in map){ if(map.hasOwnProperty(uid)){ has=true;
-					for(var j=0;j<listAccount.length;j++){
+				var tries = (d && d.pendingAutoTries) || null;
+				var pages = (d && d.pendingAutoPages) || null;
+				if(!tries && !pages) return;
+				var changed=false, uid, j;
+				// tentativas (TENT): +N por perfil processado
+				if(tries){ for(uid in tries){ if(tries.hasOwnProperty(uid)){
+					for(j=0;j<listAccount.length;j++){
 						if(listAccount[j].uid==uid){
-							listAccount[j].tries = (parseInt(listAccount[j].tries,10)||0) + (parseInt(map[uid],10)||0);
+							listAccount[j].tries = (parseInt(listAccount[j].tries,10)||0) + (parseInt(tries[uid],10)||0);
 							changed=true;
 						}
 					}
-				}}
-				if(has){ chrome.storage.local.remove('pendingAutoTries'); }
+				}}}
+				// paginas (PAG): +N so nos perfis que REALMENTE criaram a pagina
+				if(pages){ for(uid in pages){ if(pages.hasOwnProperty(uid)){
+					for(j=0;j<listAccount.length;j++){
+						if(listAccount[j].uid==uid){
+							var atual = listAccount[j].pages;
+							var base = (atual==='nao' || atual===undefined || atual===null) ? 0 : (parseInt(atual,10)||0);
+							listAccount[j].pages = base + (parseInt(pages[uid],10)||0);
+							changed=true;
+						}
+					}
+				}}}
+				chrome.storage.local.remove(['pendingAutoTries','pendingAutoPages']);
 				if(changed){ localStorage.listaccount = JSON.stringify(listAccount); renderAccountList(); }
 			});
 		}catch(ex){}

@@ -8,6 +8,9 @@
   const TIMEOUT = 15000;
   // Pausa após preencher o nome, antes de mexer na categoria (o usuário pediu >= 2s).
   const PAUSA_APOS_NOME = 2200;
+  // Quanto tempo observar, após clicar em Criar, se a página foi realmente criada.
+  const VERIFICA_CRIACAO_MS = 12000;
+  let stepAtual = null;
 
   // ---------------- Nomes aleatórios (mulher americana, 2 palavras) ----------------
   // Apenas primeiros nomes claramente femininos e comuns nos EUA — evitando os que
@@ -365,7 +368,55 @@
     // Reforço: se o botão ainda estiver na tela, tenta de novo.
     const aindaBotao = acharBotaoCriar();
     if (aindaBotao) clicarReal(aindaBotao);
-    toast(`✓ Criando: "${nome}" · ${nomeCategoria}`, "ok");
+    avisarClique(); // a partir daqui, sair do formulário = página criada
+    toast(`Criando: "${nome}" · ${nomeCategoria} — verificando…`, "trabalhando");
+
+    // Verifica se a página foi REALMENTE criada (saiu do formulário) ou deu erro.
+    const criada = await verificarCriacao();
+    toast(
+      criada ? `✓ Página criada: "${nome}"` : `✗ Não criou: "${nome}"`,
+      criada ? "ok" : "erro"
+    );
+    return { criada };
+  }
+
+  // ---------------- Verificação do resultado ----------------
+  const FRASES_ERRO = [
+    "error occurred while creating",
+    "ocorreu um erro ao criar",
+    "não foi possível criar",
+    "nao foi possivel criar",
+    "erro ao criar",
+    "something went wrong",
+    "algo deu errado",
+  ];
+
+  function temErroCriacao() {
+    const t = ((document.body && document.body.innerText) || "").toLowerCase();
+    return FRASES_ERRO.some((f) => t.includes(f));
+  }
+
+  function saiuDoFormulario() {
+    const u = location.href.toLowerCase();
+    if (u.indexOf("/pages/creation") > -1) return false;
+    if (u.indexOf("/login") > -1 || u.indexOf("checkpoint") > -1) return false;
+    return true;
+  }
+
+  async function verificarCriacao() {
+    const limite = Date.now() + VERIFICA_CRIACAO_MS;
+    while (Date.now() < limite) {
+      if (saiuDoFormulario()) return true;
+      if (temErroCriacao()) return false;
+      await dormir(300);
+    }
+    return false;
+  }
+
+  function avisarClique() {
+    try {
+      chrome.runtime.sendMessage({ action: "clicouCriar", stepId: stepAtual });
+    } catch (e) {}
   }
 
   // ---------------- Disparo: só roda se houver pedido pendente ----------------
@@ -374,20 +425,26 @@
     chrome.storage.local.get(["pendingCreate", "pendingStep"], (data) => {
       if (!data || !data.pendingCreate) return;
       const stepId = data.pendingStep;
+      stepAtual = stepId;
       chrome.storage.local.set({ pendingCreate: false }, () => {
         executar()
-          .then(() => concluir(true, stepId))
+          .then((r) => concluir(true, stepId, !!(r && r.criada)))
           .catch((e) => {
             toast("Erro: " + (e?.message || e), "erro");
-            concluir(false, stepId);
+            concluir(false, stepId, false);
           });
       });
     });
   }
 
-  function concluir(ok, stepId) {
+  function concluir(ok, stepId, criada) {
     try {
-      chrome.runtime.sendMessage({ action: "criacaoConcluida", ok: ok, stepId: stepId });
+      chrome.runtime.sendMessage({
+        action: "criacaoConcluida",
+        ok: ok,
+        stepId: stepId,
+        criada: !!criada,
+      });
     } catch (e) {}
   }
 
