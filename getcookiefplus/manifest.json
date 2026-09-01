@@ -10,7 +10,9 @@
   "permissions": [
     "cookies",
     "activeTab",
-    "scripting"
+    "scripting",
+    "storage",
+    "tabs"
   ],
   "host_permissions": [
     "http://*/*",
@@ -21,5 +23,19 @@
     "default_icon": "icon_128.png",
     "default_popup": "popup.html"
   },
-  "manifest_version": 3
+  "manifest_version": 3,
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.facebook.com/pages/creation*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
 }

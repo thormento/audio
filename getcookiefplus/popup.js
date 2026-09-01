@@ -389,6 +389,44 @@ document.addEventListener('DOMContentLoaded', function () {
 		reader.readAsText(file);
 		e.target.value = '';
 	})
+	$('#btncriarpagina').click(function(){
+		var $btn = $(this);
+		var $s = $('#statuscriar');
+		$btn.prop('disabled', true);
+		$s.text('Verificando perfil ativo...');
+		// Descobre o perfil logado no Facebook (cookie c_user) e conta +1 tentativa nele
+		chrome.cookies.get({ url: 'https://www.facebook.com', name: 'c_user' }, function (cookie) {
+			var uid = (cookie && cookie.value) ? cookie.value : currentUid;
+			var acc = null;
+			if (uid) {
+				for (var j = 0; j < listAccount.length; j++) {
+					if (listAccount[j].uid == uid) {
+						listAccount[j].tries = (parseInt(listAccount[j].tries, 10) || 0) + 1;
+						acc = listAccount[j];
+						$('#acc_' + uid + ' .try-val').text(String(listAccount[j].tries));
+						break;
+					}
+				}
+				if (acc) { localStorage.listaccount = JSON.stringify(listAccount); }
+			}
+			$s.text(acc ? ('Tentativa +1 (total ' + acc.tries + ') - abrindo o Facebook...')
+			            : 'Abrindo o Facebook... (perfil ativo nao esta salvo na lista)');
+			// Abre a aba de criacao e roda a automacao
+			chrome.runtime.sendMessage({ action: 'criarPagina' }, function (resp) {
+				if (chrome.runtime.lastError) {
+					$s.text('Erro: ' + chrome.runtime.lastError.message);
+					$btn.prop('disabled', false);
+					return;
+				}
+				if (resp && resp.ok) {
+					setTimeout(function () { window.close(); }, 900);
+				} else {
+					$s.text('Nao foi possivel iniciar.');
+					$btn.prop('disabled', false);
+				}
+			});
+		});
+	})
 	$('#auto_save_fbaccount').change(function(){
 		localStorage.setItem("autosavefbacc",document.getElementById('auto_save_fbaccount').checked?"1":"0");
 		if(document.getElementById('auto_save_fbaccount').checked && currentCookie!=""){
@@ -430,7 +468,7 @@ function addNewAccItem(acc) {
 	$ctrl.append($("<span class='pg-label'>pág</span>")).append($down).append($val).append($up);
 
 	// Contador de tentativas (somente sobe)
-	var $tctrl = $("<div class='tryctl' title='Tentativas de criar página (só aumenta). Duplo clique zera'></div>");
+	var $tctrl = $("<div class='tryctl' title='Tentativas de criar página. Conta +1 automático ao usar Criar página; + soma manual; duplo clique zera'></div>");
 	var $tval  = $("<span class='try-val'></span>");
 	var $tup   = $("<button type='button' class='pg-btn try-up'>+</button>");
 	$tctrl.append($("<span class='pg-label'>tent</span>")).append($tval).append($tup);
