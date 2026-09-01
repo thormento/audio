@@ -97,6 +97,22 @@
     el.dispatchEvent(new MouseEvent("click", opts));
   }
 
+  // Dispara uma tecla especial (ex.: ArrowDown, Enter) com keyCode para o FB reconhecer.
+  function teclar(el, key, code, keyCode) {
+    for (const type of ["keydown", "keypress", "keyup"]) {
+      if (type === "keypress" && key !== "Enter") continue;
+      const e = new KeyboardEvent(type, {
+        key,
+        code,
+        bubbles: true,
+        cancelable: true,
+      });
+      Object.defineProperty(e, "keyCode", { get: () => keyCode });
+      Object.defineProperty(e, "which", { get: () => keyCode });
+      el.dispatchEvent(e);
+    }
+  }
+
   // ---------------- Localização dos campos pelo RÓTULO ----------------
   // O formulário do FB envolve cada campo num <label> que contém o texto do rótulo.
   // Isso evita confundir com a barra de busca do topo (outro combobox da página).
@@ -249,15 +265,31 @@
     const letra = letraAleatoria();
     await digitar(catInput, letra);
 
+    // Espera as opções aparecerem para a letra digitada.
     const opcao = await esperar(() => primeiraOpcao(), { timeout: 9000 });
     if (!opcao) {
       toast(`Erro: nenhuma categoria apareceu para "${letra}".`, "erro");
       return;
     }
     const nomeCategoria = txt(opcao) || "(categoria)";
-    clicar(opcao);
-    toast(`Categoria: ${nomeCategoria}`, "trabalhando");
-    await dormir(600);
+
+    // Seleciona a primeira opção por teclado: seta para baixo + Enter.
+    await dormir(300);
+    teclar(catInput, "ArrowDown", "ArrowDown", 40);
+    await dormir(300);
+    teclar(catInput, "Enter", "Enter", 13);
+    await dormir(700);
+
+    // Fallback: se a lista continuar aberta, clica na primeira opção.
+    if (primeiraOpcao()) {
+      const op = primeiraOpcao();
+      if (op) clicar(op);
+      await dormir(500);
+    }
+    toast(`Categoria: ${nomeCategoria} — aguardando 2s…`, "trabalhando");
+
+    // Espera pedida (2s) antes de clicar em Create Page.
+    await dormir(2000);
 
     // 3) Botão Criar Página: acha o botão e espera ele habilitar; clica.
     const botao = await esperar(() => acharBotaoCriar());
