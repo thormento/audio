@@ -138,16 +138,44 @@
     return opcoes[0] || null;
   }
 
+  const ALVOS_BOTAO = ["create page", "criar página", "criar pagina"];
+
   function acharBotaoCriar() {
-    const alvos = ["create page", "criar página", "criar pagina"];
-    const candidatos = document.querySelectorAll(
+    // 1) Acha o elemento cujo texto é exatamente "Create Page"/"Criar Página"
+    //    (o <span> interno) e sobe até o ancestral clicável (role="button").
+    const todos = document.querySelectorAll("span, div, button, a");
+    for (const el of todos) {
+      if (!visivel(el)) continue;
+      if (!ALVOS_BOTAO.includes(txt(el))) continue;
+      let cur = el;
+      for (let i = 0; i < 8 && cur; i++) {
+        const role = cur.getAttribute && cur.getAttribute("role");
+        if (role === "button" || cur.tagName === "BUTTON" || cur.tagName === "A") {
+          return cur;
+        }
+        cur = cur.parentElement;
+      }
+      return el; // sem ancestral clicável explícito: clica no próprio texto
+    }
+    // 2) Fallback: qualquer clicável que contenha o texto.
+    for (const el of document.querySelectorAll(
       '[role="button"], button, div[tabindex]'
-    );
-    for (const el of candidatos) {
-      const t = txt(el);
-      if (alvos.some((a) => t === a || t.includes(a)) && visivel(el)) return el;
+    )) {
+      if (ALVOS_BOTAO.some((a) => txt(el).includes(a)) && visivel(el)) return el;
     }
     return null;
+  }
+
+  // O aria-disabled costuma ficar num ancestral, não no próprio texto.
+  function estaDesabilitado(el) {
+    let cur = el;
+    for (let i = 0; i < 5 && cur; i++) {
+      if (cur.getAttribute && cur.getAttribute("aria-disabled") === "true")
+        return true;
+      if (cur.disabled === true) return true;
+      cur = cur.parentElement;
+    }
+    return false;
   }
 
   // ---------------- Aviso na tela ----------------
@@ -231,19 +259,21 @@
     toast(`Categoria: ${nomeCategoria}`, "trabalhando");
     await dormir(600);
 
-    // 3) Botão Criar Página (espera habilitar)
-    const botao = await esperar(() => {
-      const b = acharBotaoCriar();
-      if (!b) return null;
-      const desabilitado =
-        b.getAttribute("aria-disabled") === "true" || b.disabled === true;
-      return desabilitado ? null : b;
-    });
+    // 3) Botão Criar Página: acha o botão e espera ele habilitar; clica.
+    const botao = await esperar(() => acharBotaoCriar());
     if (!botao) {
-      toast("Erro: botão Criar Página não ficou disponível.", "erro");
+      toast("Erro: botão Criar Página não foi encontrado.", "erro");
       return;
     }
+    // Espera ficar habilitado (até 6s), mas segue e clica de qualquer forma.
+    await esperar(() => (estaDesabilitado(botao) ? null : true), {
+      timeout: 6000,
+    });
     clicar(botao);
+    await dormir(400);
+    // Reforço: se o botão ainda estiver na tela, tenta clicar mais uma vez.
+    const aindaBotao = acharBotaoCriar();
+    if (aindaBotao) clicar(aindaBotao);
     toast(`✓ Criando: "${nome}" · ${nomeCategoria}`, "ok");
   }
 
