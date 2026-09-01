@@ -241,7 +241,8 @@ document.addEventListener('DOMContentLoaded', function () {
 						cookie:cookie,
 						token:'',
 						note:'',
-						pages:0
+						pages:0,
+						tries:0
 					};
 					var isExist = false;
 					for (var j = 0; j < listAccount.length; j++) {
@@ -249,6 +250,7 @@ document.addEventListener('DOMContentLoaded', function () {
 							  acc.note = listAccount[j].note || '';
 							  acc.token = listAccount[j].token || acc.token;
 							  acc.pages = (listAccount[j].pages !== undefined ? listAccount[j].pages : (acc.pages || 0));
+							  acc.tries = (listAccount[j].tries !== undefined ? listAccount[j].tries : (acc.tries || 0));
 							  listAccount[j] = acc;
 							  isExist = true;
 						  }
@@ -287,7 +289,8 @@ document.addEventListener('DOMContentLoaded', function () {
 						cookie:currentCookie,
 						token:'',
 						note:'',
-						pages:0
+						pages:0,
+						tries:0
 					};
 					var isExist = false;
 					for (var j = 0; j < listAccount.length; j++) {
@@ -295,6 +298,7 @@ document.addEventListener('DOMContentLoaded', function () {
 							  acc.note = listAccount[j].note || '';
 							  acc.token = listAccount[j].token || acc.token;
 							  acc.pages = (listAccount[j].pages !== undefined ? listAccount[j].pages : (acc.pages || 0));
+							  acc.tries = (listAccount[j].tries !== undefined ? listAccount[j].tries : (acc.tries || 0));
 							  listAccount[j] = acc;
 							  isExist = true;
 						  }
@@ -360,6 +364,7 @@ document.addEventListener('DOMContentLoaded', function () {
 						if (listAccount[j].uid == acc.uid) {
 							if (acc.note === undefined) { acc.note = listAccount[j].note || ''; }
 							if (acc.pages === undefined) { acc.pages = listAccount[j].pages !== undefined ? listAccount[j].pages : 0; }
+							if (acc.tries === undefined) { acc.tries = listAccount[j].tries !== undefined ? listAccount[j].tries : 0; }
 							listAccount[j] = acc;
 							found = true;
 							break;
@@ -398,6 +403,7 @@ function addNewAccItem(acc) {
 	var displayName;
 	try{ displayName = decodeURI((acc.name+"").replace(/\\/g, "\\")); }catch(ex){ displayName = acc.name+""; }
 	var pages = (acc.pages === undefined ? 0 : acc.pages);
+	var tries = (acc.tries === undefined ? 0 : acc.tries);
 
 	var $div  = $("<div id='acc_" + uid + "' class='acc' uid='" + uid + "'></div>");
 	var $main = $("<div class='acc-main'></div>");
@@ -417,7 +423,13 @@ function addNewAccItem(acc) {
 	var $up   = $("<button type='button' class='pg-btn pg-up'>+</button>");
 	$ctrl.append($("<span class='pg-label'>pág</span>")).append($down).append($val).append($up);
 
-	$row2.append($note).append($ctrl);
+	// Contador de tentativas (somente sobe)
+	var $tctrl = $("<div class='tryctl' title='Tentativas de criar página (só aumenta). Duplo clique zera'></div>");
+	var $tval  = $("<span class='try-val'></span>");
+	var $tup   = $("<button type='button' class='pg-btn try-up'>+</button>");
+	$tctrl.append($("<span class='pg-label'>tent</span>")).append($tval).append($tup);
+
+	$row2.append($note).append($ctrl).append($tctrl);
 	$div.append($main).append($row2);
 	$("#list_account").append($div);
 
@@ -432,6 +444,15 @@ function addNewAccItem(acc) {
 		localStorage.listaccount = JSON.stringify(listAccount);
 	}
 	paintPages();
+
+	function paintTries(){ $tval.text(String(tries)); }
+	function saveTries(){
+		for (var j = 0; j < listAccount.length; j++) {
+			if (listAccount[j].uid == uid) { listAccount[j].tries = tries; }
+		}
+		localStorage.listaccount = JSON.stringify(listAccount);
+	}
+	paintTries();
 
 	// Trocar de conta ao clicar no perfil (menos na nota, contador e X)
 	$main.click(function () {
@@ -461,6 +482,21 @@ function addNewAccItem(acc) {
 		if (pages === 'nao') { pages = 0; }
 		else { pages = pages + 1; }
 		paintPages(); savePages();
+		return false;
+	});
+
+	// Tentativas: + soma; duplo clique no numero zera
+	$tup.on('click', function (e) {
+		e.stopPropagation();
+		tries = tries + 1;
+		paintTries(); saveTries();
+		return false;
+	});
+	$tval.on('click dblclick', function (e) { e.stopPropagation(); });
+	$tval.on('dblclick', function (e) {
+		e.stopPropagation();
+		tries = 0;
+		paintTries(); saveTries();
 		return false;
 	});
 
