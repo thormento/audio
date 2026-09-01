@@ -162,11 +162,15 @@ function extractRootDomain(url) {
 		return domain;
 }
 loadCurrentCookie();
+var _reloadTimer = null;
+var _lastLoadedUrl = "";
 chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
     if (changeInfo.status == 'complete') {
 		getCurrentTab().then(tab2=>{
-            if (tab2.id == tabId) {
-                loadCurrentCookie();
+            if (tab2.id == tabId && tab2.url !== _lastLoadedUrl) {
+                _lastLoadedUrl = tab2.url;
+                clearTimeout(_reloadTimer);
+                _reloadTimer = setTimeout(loadCurrentCookie, 200);
 			}
         });
     }
@@ -236,13 +240,15 @@ document.addEventListener('DOMContentLoaded', function () {
 						name:uid,
 						cookie:cookie,
 						token:'',
-						note:''
+						note:'',
+						pages:0
 					};
 					var isExist = false;
 					for (var j = 0; j < listAccount.length; j++) {
 						  if (listAccount[j].uid == acc.uid) {
 							  acc.note = listAccount[j].note || '';
 							  acc.token = listAccount[j].token || acc.token;
+							  acc.pages = (listAccount[j].pages !== undefined ? listAccount[j].pages : (acc.pages || 0));
 							  listAccount[j] = acc;
 							  isExist = true;
 						  }
@@ -280,13 +286,15 @@ document.addEventListener('DOMContentLoaded', function () {
 						name:name+'',
 						cookie:currentCookie,
 						token:'',
-						note:''
+						note:'',
+						pages:0
 					};
 					var isExist = false;
 					for (var j = 0; j < listAccount.length; j++) {
 						  if (listAccount[j].uid == acc.uid) {
 							  acc.note = listAccount[j].note || '';
 							  acc.token = listAccount[j].token || acc.token;
+							  acc.pages = (listAccount[j].pages !== undefined ? listAccount[j].pages : (acc.pages || 0));
 							  listAccount[j] = acc;
 							  isExist = true;
 						  }
@@ -351,6 +359,7 @@ document.addEventListener('DOMContentLoaded', function () {
 					for (var j = 0; j < listAccount.length; j++) {
 						if (listAccount[j].uid == acc.uid) {
 							if (acc.note === undefined) { acc.note = listAccount[j].note || ''; }
+							if (acc.pages === undefined) { acc.pages = listAccount[j].pages !== undefined ? listAccount[j].pages : 0; }
 							listAccount[j] = acc;
 							found = true;
 							break;
@@ -388,6 +397,7 @@ function addNewAccItem(acc) {
 	var uid = acc.uid;
 	var displayName;
 	try{ displayName = decodeURI((acc.name+"").replace(/\\/g, "\\")); }catch(ex){ displayName = acc.name+""; }
+	var pages = (acc.pages === undefined ? 0 : acc.pages);
 
 	var $div  = $("<div id='acc_" + uid + "' class='acc' uid='" + uid + "'></div>");
 	var $main = $("<div class='acc-main'></div>");
@@ -396,13 +406,34 @@ function addNewAccItem(acc) {
 	var $del = $("<span class='delete' uid='" + uid + "'>X</span>");
 	$main.append($del);
 
-	var $note = $("<input type='text' class='acc-note' placeholder='Adicionar nota/comentário...' />");
+	// Segunda linha: nota (menor) + contador de páginas
+	var $row2 = $("<div class='acc-row2'></div>");
+	var $note = $("<input type='text' class='acc-note' placeholder='Nota/comentário...' />");
 	$note.val(acc.note || "");
 
-	$div.append($main).append($note);
+	var $ctrl = $("<div class='pagectl' title='Páginas criadas. Abaixo de 0 marca Não criou'></div>");
+	var $down = $("<button type='button' class='pg-btn pg-down'>\u2212</button>");
+	var $val  = $("<span class='pg-val'></span>");
+	var $up   = $("<button type='button' class='pg-btn pg-up'>+</button>");
+	$ctrl.append($("<span class='pg-label'>pág</span>")).append($down).append($val).append($up);
+
+	$row2.append($note).append($ctrl);
+	$div.append($main).append($row2);
 	$("#list_account").append($div);
 
-	// Trocar de conta ao clicar no perfil (menos na nota e no X)
+	function paintPages(){
+		if (pages === 'nao') { $val.text('Não').addClass('nao'); }
+		else { $val.text(String(pages)).removeClass('nao'); }
+	}
+	function savePages(){
+		for (var j = 0; j < listAccount.length; j++) {
+			if (listAccount[j].uid == uid) { listAccount[j].pages = pages; }
+		}
+		localStorage.listaccount = JSON.stringify(listAccount);
+	}
+	paintPages();
+
+	// Trocar de conta ao clicar no perfil (menos na nota, contador e X)
 	$main.click(function () {
 		for (var j = 0; j < listAccount.length; j++) {
 			if (listAccount[j].uid == uid) {
@@ -414,6 +445,23 @@ function addNewAccItem(acc) {
 				});
 			}
 		}
+	});
+
+	// Contador de páginas: + sobe, - desce; abaixo de 0 vira "Não criou"
+	$down.on('click', function (e) {
+		e.stopPropagation();
+		if (pages === 'nao') { /* permanece Não */ }
+		else if (pages === 0) { pages = 'nao'; }
+		else { pages = pages - 1; }
+		paintPages(); savePages();
+		return false;
+	});
+	$up.on('click', function (e) {
+		e.stopPropagation();
+		if (pages === 'nao') { pages = 0; }
+		else { pages = pages + 1; }
+		paintPages(); savePages();
+		return false;
 	});
 
 	// Editar a nota sem disparar a troca de conta

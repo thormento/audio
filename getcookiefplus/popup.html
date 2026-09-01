@@ -4,7 +4,7 @@
     <title>Cookie Azul</title>
     <style>
 	html {
-    width: 257px;
+    width: 340px;
 }
       body {
       overflow: hidden;
@@ -64,7 +64,7 @@
       line-height: 1.5em;
       }
       .main {
-      width: 250px;
+      width: 320px;
       padding: 10px;
       }
       h4 {
@@ -75,7 +75,7 @@
       padding-bottom: 6px;
       margin: 0px 0px 10px 0;
       }
-      #list_account {max-height: 300px;overflow: auto;    margin-top: 5px;}
+      #list_account {max-height: 420px;overflow: auto;    margin-top: 5px;}
       #list_account .acc {
       font-size: 12px;
       font-weight: bold;
@@ -90,19 +90,63 @@
       cursor: pointer;
       padding-right: 14px;
       }
-      #list_account .acc-note {
-      width: 100%;
-      box-sizing: border-box;
+      #list_account .acc-row2 {
+      display: flex;
+      align-items: center;
+      gap: 4px;
       margin-top: 4px;
-      padding: 3px 5px;
+      }
+      #list_account .acc-note {
+      flex: 1 1 auto;
+      min-width: 0;
+      box-sizing: border-box;
+      padding: 2px 5px;
       border: 1px solid rgba(255,255,255,0.6);
       border-radius: 2px;
-      font-size: 11px;
+      font-size: 10px;
       font-weight: normal;
       color: #303030;
       background: rgba(255,255,255,0.95);
       }
       #list_account .acc-note::placeholder { color: #8a8a8a; }
+      #list_account .pagectl {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      background: rgba(255,255,255,0.92);
+      border-radius: 3px;
+      padding: 1px 3px;
+      }
+      #list_account .pg-label {
+      font-size: 9px;
+      font-weight: bold;
+      color: #394959;
+      text-transform: uppercase;
+      margin-right: 1px;
+      }
+      #list_account .pg-btn {
+      border: 0;
+      background: #394959;
+      color: #fff;
+      width: 17px;
+      height: 17px;
+      line-height: 1;
+      border-radius: 2px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: bold;
+      padding: 0;
+      }
+      #list_account .pg-btn:hover { background: #00aaff; }
+      #list_account .pg-val {
+      min-width: 26px;
+      text-align: center;
+      font-size: 12px;
+      font-weight: bold;
+      color: #303030;
+      }
+      #list_account .pg-val.nao { color: #e64b32; }
       #list_account .acc-note:focus { outline: none; border-color: #394959; }
       #list_account .acc-note.saved { border-color: #64c306; box-shadow: 0 0 0 1px #64c306; }
       #list_account .acc:hover {
