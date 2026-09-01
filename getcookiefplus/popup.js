@@ -412,7 +412,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	}
 
 	function iniciarCicloTodos(){
-		var $btn = $('#btncriarpagina');
+		var $btn = $('#btncriartodos');
 		var $s = $('#statuscriar');
 		var profiles = [];
 		for (var i = 0; i < listAccount.length; i++) {
@@ -429,10 +429,38 @@ document.addEventListener('DOMContentLoaded', function () {
 		});
 	}
 
-	$('#btncriarpagina').click(function(){ iniciarCicloTodos(); });
-	$('#pararCiclo').click(function(){
+	$('#btncriartodos').click(function(){ iniciarCicloTodos(); });
+
+	$('#btncriaruma').click(function(){
+		var $s = $('#statuscriar');
+		$('#btncriaruma').prop('disabled', true);
+		$s.text('Verificando perfil ativo...');
+		chrome.cookies.get({ url: 'https://www.facebook.com', name: 'c_user' }, function (cookie) {
+			var uid = (cookie && cookie.value) ? cookie.value : currentUid;
+			var acc = null;
+			if (uid) {
+				for (var j = 0; j < listAccount.length; j++) {
+					if (listAccount[j].uid == uid) {
+						listAccount[j].tries = (parseInt(listAccount[j].tries, 10) || 0) + 1;
+						acc = listAccount[j];
+						$('#acc_' + uid + ' .try-val').text(String(listAccount[j].tries));
+						break;
+					}
+				}
+				if (acc) { localStorage.listaccount = JSON.stringify(listAccount); }
+			}
+			$s.text(acc ? ('Tentativa +1 (total ' + acc.tries + ') - criando 1 pagina...')
+			            : 'Criando 1 pagina... (perfil ativo nao esta salvo na lista)');
+			chrome.runtime.sendMessage({ action: 'criarUma' }, function (resp) {
+				if (chrome.runtime.lastError) { $s.text('Erro: ' + chrome.runtime.lastError.message); $('#btncriaruma').prop('disabled', false); return; }
+				setTimeout(function () { window.close(); }, 900);
+			});
+		});
+	});
+
+	$('#btnpararciclo').click(function(){
 		chrome.runtime.sendMessage({ action: 'pararCiclo' }, function () {
-			$('#statuscriar').text('Ciclo interrompido.');
+			$('#statuscriar').text('Criacao interrompida.');
 		});
 	});
 
@@ -444,8 +472,8 @@ document.addEventListener('DOMContentLoaded', function () {
 			chrome.storage.local.get(['cicloAtivo','cicloStatus'], function(d){
 				var ativo = d && d.cicloAtivo;
 				if(d && d.cicloStatus){ $('#statuscriar').text(d.cicloStatus); }
-				if(ativo){ $('#btncriarpagina').prop('disabled', true); $('#pararCiclo').show(); }
-				else { $('#btncriarpagina').prop('disabled', false); $('#pararCiclo').hide(); reconcileAutoTries(); }
+				if(ativo){ $('#btncriartodos').prop('disabled', true); $('#btncriaruma').prop('disabled', true); $('#btnpararciclo').show(); }
+				else { $('#btncriartodos').prop('disabled', false); $('#btncriaruma').prop('disabled', false); $('#btnpararciclo').hide(); reconcileAutoTries(); }
 			});
 		}catch(ex){}
 	}, 1200);

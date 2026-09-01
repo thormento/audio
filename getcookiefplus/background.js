@@ -1,14 +1,15 @@
 // Service worker do Cookie Azul.
-// Orquestra o CICLO de criação de página em todos os perfis salvos:
-//   troca o cookie para o perfil -> abre a aba de criação -> content.js cria a
-//   página -> avisa "concluída" -> passa para o próximo perfil, e assim por diante.
-// O estado do ciclo fica em chrome.storage.local para sobreviver a reinícios do
-// service worker; um alarme "watchdog" garante que um passo travado não pare tudo.
+// - "criarUma": cria UMA página no perfil atualmente logado (isolado).
+// - Ciclo "iniciarCicloTodos": para cada perfil salvo, troca o cookie da conta,
+//   abre UMA NOVA ABA de criação e cria a página; ao terminar passa ao próximo.
+//   Cada perfil abre sua própria aba; ao final (ou ao parar) TODAS as abas
+//   abertas pelo ciclo são fechadas.
+// O estado fica em chrome.storage.local para sobreviver a reinícios do worker;
+// um alarme "watchdog" avança caso um perfil trave.
 
 const URL_CRIACAO = "https://www.facebook.com/pages/creation/";
 const PASSO_TIMEOUT_MIN = 1.2; // tempo máx. por perfil antes de seguir em frente
 
-// Domínios do Facebook onde o cookie do perfil é aplicado (igual ao import do popup).
 const DOMINIOS_FB = [
   "https://www.facebook.com",
   "https://web.facebook.com",
@@ -24,6 +25,8 @@ const dormir = (ms) => new Promise((r) => setTimeout(r, ms));
 const getLocal = (keys) => new Promise((res) => chrome.storage.local.get(keys, res));
 const setLocal = (obj) => new Promise((res) => chrome.storage.local.set(obj, res));
 const removeLocal = (keys) => new Promise((res) => chrome.storage.local.remove(keys, res));
+const criarAba = (url) =>
+  new Promise((res) => chrome.tabs.create({ url, active: true }, (t) => res(t && t.id)));
 
 // ---------------- Troca de conta (cookies do Facebook) ----------------
 function removerCookiesFacebook() {
@@ -72,27 +75,21 @@ function aplicarCookieFacebook(cookieStr) {
   });
 }
 
-// ---------------- Aba de criação ----------------
-function abrirOuAtualizar(tabId, url) {
-  return new Promise((resolve) => {
-    if (tabId) {
-      chrome.tabs.update(tabId, { url, active: true }, (t) => {
-        if (chrome.runtime.lastError || !t) {
-          chrome.tabs.create({ url }, (nt) => resolve(nt && nt.id));
-        } else {
-          resolve(tabId);
-        }
-      });
-    } else {
-      chrome.tabs.create({ url }, (nt) => resolve(nt && nt.id));
-    }
-  });
+// ---------------- Criar apenas 1 página (perfil atual) ----------------
+async function criarUma() {
+  await setLocal({ pendingCreate: true });
+  await criarAba(URL_CRIACAO + "?ts=" + Date.now());
 }
 
-// ---------------- Ciclo ----------------
+// ---------------- Ciclo em todos os perfis ----------------
 async function iniciarCiclo(profiles) {
   const anterior = (await getLocal("pendingAutoTries")).pendingAutoTries || {};
-  const estado = { profiles: profiles || [], index: 0, tabId: null, awaiting: false };
+  const estado = {
+    profiles: profiles || [],
+    index: 0,
+    tabIds: [],
+    awaiting: false,
+  };
   await setLocal({
     cicloEstado: estado,
     cicloAtivo: true,
@@ -122,8 +119,10 @@ async function processarPasso() {
     cicloStatus: "Perfil " + posicao + ": " + rotulo + " — criando página…",
   });
 
-  const alvo = URL_CRIACAO + "?ts=" + Date.now();
-  st.tabId = await abrirOuAtualizar(st.tabId, alvo);
+  // Abre UMA NOVA aba para este perfil e guarda o id (será fechada no fim).
+  const novoId = await criarAba(URL_CRIACAO + "?ts=" + Date.now());
+  if (!st.tabIds) st.tabIds = [];
+  if (novoId) st.tabIds.push(novoId);
   st.awaiting = true;
   await setLocal({ cicloEstado: st });
 
@@ -136,7 +135,6 @@ async function avancar() {
   const st = d.cicloEstado;
   if (!st || !st.awaiting) return; // evita avanço duplicado (mensagem + watchdog)
 
-  // Marca +1 tentativa para o perfil que acabou de rodar.
   const perfil = st.profiles[st.index];
   const pend = d.pendingAutoTries || {};
   if (perfil) pend[perfil.uid] = (pend[perfil.uid] || 0) + 1;
@@ -152,13 +150,27 @@ async function avancar() {
 
 async function finalizar() {
   chrome.alarms.clear("cicloWatchdog");
+  const d = await getLocal(["cicloEstado"]);
+  const ids = (d.cicloEstado && d.cicloEstado.tabIds) || [];
   await removeLocal(["cicloEstado", "pendingCreate"]);
   await setLocal({ cicloAtivo: false, cicloParar: false, cicloStatus: "Ciclo concluído." });
+
+  // Fecha todas as abas abertas durante o ciclo.
+  ids.forEach((id) => {
+    try {
+      chrome.tabs.remove(id, () => void chrome.runtime.lastError);
+    } catch (e) {}
+  });
 }
 
 // ---------------- Mensagens e alarme ----------------
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (!msg) return;
+  if (msg.action === "criarUma") {
+    criarUma();
+    sendResponse({ ok: true });
+    return true;
+  }
   if (msg.action === "iniciarCicloTodos") {
     iniciarCiclo(msg.profiles || []);
     sendResponse({ ok: true });

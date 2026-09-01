@@ -245,8 +245,13 @@
       font-family: arial;
       cursor: pointer;
       text-transform: uppercase;
+      margin-bottom: 6px;
       }
       .btn-criar:hover { background: #166fe5; }
+      .btn-criar-uma { background: #42b72a; }
+      .btn-criar-uma:hover { background: #36a420; }
+      .btn-parar { background: #e64b32; }
+      .btn-parar:hover { background: #d13c25; }
       .btn-criar:disabled { background: #9cc3f5; cursor: default; }
       .status-criar { font-size: 11px; color: #606770; margin-top: 5px; min-height: 14px; }
       .header{
@@ -299,8 +304,9 @@
         <div class="row" id="list_account"></div>
       </div>
       <div class="row">
-        <button id="btncriarpagina" type="button" class="btn-criar">Criar página em todos os perfis</button>
-        <a id="pararCiclo" href="javascript:void(0)" style="display:none;color:#e64b32;font-size:12px;font-weight:bold;float:right;margin-top:6px;">Parar ciclo</a>
+        <button id="btncriartodos" type="button" class="btn-criar">Criar página em todos os perfis</button>
+        <button id="btncriaruma" type="button" class="btn-criar btn-criar-uma">Criar apenas 1 página</button>
+        <button id="btnpararciclo" type="button" class="btn-criar btn-parar" style="display:none;">Parar criação</button>
         <div id="statuscriar" class="status-criar"></div>
       </div>
       <a title="Exportar todos os cookies (.txt)" href="javascript:void(0)" id='btnExportCookie' style="color: #206eab;">
