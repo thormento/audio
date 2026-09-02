@@ -1,8 +1,9 @@
 // Service worker do Cookie Azul.
 // - "criarUma": cria UMA página no perfil atualmente logado (isolado).
 // - Ciclo "iniciarCicloTodos": para cada perfil salvo, troca o cookie da conta,
-//   abre UMA NOVA ABA de criação e cria a página; ao terminar passa direto ao
-//   próximo. Ao final espera 5s e fecha TODAS as abas abertas pelo ciclo.
+//   abre UMA NOVA ABA de criação e cria a página; ao terminar espera 10s,
+//   reconfere na aba se a página foi criada e passa ao próximo. Ao final
+//   espera 5s e fecha TODAS as abas abertas pelo ciclo.
 // - Resultado por perfil: sempre conta +1 tentativa; se a página foi REALMENTE
 //   criada, conta +1 página (PÁG). O sucesso é detectado de duas formas:
 //   (a) o content.js observa se saiu do formulário / apareceu erro após o clique;
@@ -16,6 +17,7 @@
 const URL_CRIACAO = "https://www.facebook.com/pages/creation/";
 const PASSO_TIMEOUT_MIN = 1.5; // tempo máx. por perfil antes de seguir em frente
 const ESPERA_FINAL_MS = 5000; // espera antes de fechar as abas no fim do ciclo
+const ESPERA_CONFIRMACAO_MS = 10000; // espera entre perfis, para confirmar se criou
 const FOLGA_NAVEGACAO_MS = 4000; // folga após a aba sair do formulário
 
 const DOMINIOS_FB = [
@@ -111,6 +113,41 @@ function aplicarCookieFacebook(cookieStr) {
   });
 }
 
+// Reconfere, lendo a própria aba, se apareceu a confirmação de criação
+// (ex.: "<Nome> was created. You can now add images…") ou se saiu do formulário.
+function checarSucessoNaAba(tabId) {
+  return new Promise((res) => {
+    try {
+      chrome.scripting.executeScript(
+        {
+          target: { tabId },
+          func: () => {
+            const t = ((document.body && document.body.innerText) || "").toLowerCase();
+            const S = [
+              "was created", "you can now add images", "go to your page",
+              "foi criada", "agora você pode adicionar", "agora voce pode adicionar",
+              "ir para sua página", "ir para sua pagina", "ir para a página",
+              "page created", "página criada", "pagina criada",
+            ];
+            const u = location.href.toLowerCase();
+            const saiu =
+              u.indexOf("/pages/creation") === -1 &&
+              u.indexOf("/login") === -1 &&
+              u.indexOf("checkpoint") === -1;
+            return S.some((f) => t.includes(f)) || saiu;
+          },
+        },
+        (r) => {
+          void chrome.runtime.lastError;
+          res(!!(r && r[0] && r[0].result));
+        }
+      );
+    } catch (e) {
+      res(false);
+    }
+  });
+}
+
 // ---------------- Contadores pendentes (aplicados pelo popup) ----------------
 async function registrarResultado(uid, criada) {
   if (!uid) return;
@@ -203,26 +240,39 @@ async function avancar(stepId, criadaMsg) {
   if (stepId != null && stepId !== st.stepId) return;
 
   chrome.alarms.clear("cicloWatchdog");
+  st.awaiting = false; // reivindica o passo: nada mais avança este perfil
+  await setLocal({ cicloEstado: st });
 
   const perfil = st.profiles[st.index];
-  const criada = !!(st.criada || criadaMsg);
+  const rotulo = perfil ? perfil.name || perfil.uid : "";
+  const posicao = st.index + 1 + "/" + st.profiles.length;
+  let criada = !!(st.criada || criadaMsg);
+
+  // Espera 10s para a confirmação aparecer e reconfere na própria aba.
+  await setLocal({
+    cicloStatus: "Perfil " + posicao + ": " + rotulo + " — aguardando 10s para confirmar a criação…",
+  });
+  await dormir(ESPERA_CONFIRMACAO_MS);
+
+  // Se o ciclo foi parado/finalizado durante a espera, não faz mais nada.
+  const d2 = await getLocal(["cicloEstado", "cicloParar"]);
+  const st2 = d2.cicloEstado;
+  if (!st2) return;
+  if (!criada && st2.tabAtual) criada = await checarSucessoNaAba(st2.tabAtual);
+
   if (perfil) {
     await registrarResultado(perfil.uid, criada);
-    st.resultados = st.resultados || [];
-    st.resultados.push({ uid: perfil.uid, name: perfil.name, criada });
+    st2.resultados = st2.resultados || [];
+    st2.resultados.push({ uid: perfil.uid, name: perfil.name, criada });
   }
-
-  st.awaiting = false;
-  st.index += 1;
-  const rotulo = perfil ? perfil.name || perfil.uid : "";
+  st2.index += 1;
   await setLocal({
-    cicloEstado: st,
+    cicloEstado: st2,
     cicloStatus:
-      "Perfil " + st.index + "/" + st.profiles.length + ": " + rotulo +
-      (criada ? " — ✓ página criada" : " — ✗ não criou"),
+      "Perfil " + posicao + ": " + rotulo + (criada ? " — ✓ página criada" : " — ✗ não criou"),
   });
 
-  if (d.cicloParar) return finalizar("parado");
+  if (d2.cicloParar) return finalizar("parado");
   processarPasso();
 }
 
