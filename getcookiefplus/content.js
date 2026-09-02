@@ -66,6 +66,45 @@
     return letras[Math.floor(Math.random() * letras.length)];
   }
 
+  // ---------------- Nomes do arquivo nomes.txt ----------------
+  // Le a lista de nomes (um por linha) empacotada na raiz da extensao.
+  async function carregarNomesArquivo() {
+    try {
+      const url = chrome.runtime.getURL("nomes.txt");
+      const r = await fetch(url, { cache: "no-store" });
+      if (!r.ok) return [];
+      const txt = (await r.text()).replace(/^\uFEFF/, "");
+      return txt
+        .split(/\r?\n/)
+        .map((l) => l.trim())
+        .filter((l) => l && !l.startsWith("#"));
+    } catch (e) {
+      return [];
+    }
+  }
+  const getNomesUsados = () =>
+    new Promise((res) =>
+      chrome.storage.local.get("nomesUsados", (d) => res((d && d.nomesUsados) || []))
+    );
+  const setNomesUsados = (arr) =>
+    new Promise((res) => chrome.storage.local.set({ nomesUsados: arr }, res));
+
+  // Proximo nome: o primeiro do nomes.txt ainda nao usado (em ordem).
+  // Se o arquivo estiver vazio ou os nomes acabarem, sorteia um nome.
+  async function proximoNome() {
+    const lista = await carregarNomesArquivo();
+    if (lista.length) {
+      const usados = await getNomesUsados();
+      const livre = lista.find((n) => !usados.includes(n) && !nomeBloqueado(n));
+      if (livre) {
+        usados.push(livre);
+        await setNomesUsados(usados);
+        return { nome: livre, origem: "arquivo" };
+      }
+    }
+    return { nome: nomeAleatorio(), origem: "sorteado" };
+  }
+
   // ---------------- Utilidades ----------------
   const dormir = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -348,10 +387,11 @@
       return { criada: false, definitivo: true };
     }
 
-    // 1) Nome (mulher, inglês)
-    const nome = nomeAleatorio();
+    // 1) Nome: do nomes.txt (em ordem) ou sorteado se acabarem
+    const escolha = await proximoNome();
+    const nome = escolha.nome;
     await preencherNome(campos, nome);
-    toast(`Nome: ${nome} — aguardando…`, "trabalhando");
+    toast(`Nome (${escolha.origem}): ${nome} — aguardando…`, "trabalhando");
     await dormir(PAUSA_APOS_NOME);
 
     // 2) Categoria

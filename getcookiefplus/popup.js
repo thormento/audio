@@ -442,6 +442,41 @@ document.addEventListener('DOMContentLoaded', function () {
 		});
 	}
 
+	// Nomes das páginas (arquivo nomes.txt na raiz da extensão)
+	function lerNomesArquivo(cb){
+		try{
+			fetch(chrome.runtime.getURL('nomes.txt'), { cache: 'no-store' })
+				.then(function(r){ return r.ok ? r.text() : ''; })
+				.then(function(t){
+					var lista = (t||'').replace(/^\uFEFF/,'').split(/\r?\n/)
+						.map(function(l){ return l.trim(); })
+						.filter(function(l){ return l && l.charAt(0) !== '#'; });
+					cb(lista);
+				})
+				.catch(function(){ cb([]); });
+		}catch(ex){ cb([]); }
+	}
+	function atualizarNomesInfo(){
+		lerNomesArquivo(function(lista){
+			chrome.storage.local.get(['nomesUsados'], function(d){
+				var usados = (d && d.nomesUsados) || [];
+				var restantes = lista.filter(function(n){ return usados.indexOf(n) === -1; }).length;
+				if(lista.length === 0){
+					$('#nomesinfo').text('nomes.txt vazio - usando nomes sorteados.');
+					$('#zerarNomes').hide();
+				}else{
+					$('#nomesinfo').text('Nomes (nomes.txt): ' + restantes + ' de ' + lista.length + ' disponiveis'
+						+ (restantes === 0 ? ' - acabaram, usando sorteados.' : '.'));
+					$('#zerarNomes').toggle(usados.length > 0);
+				}
+			});
+		});
+	}
+	$('#zerarNomes').click(function(){
+		chrome.storage.local.remove('nomesUsados', function(){ atualizarNomesInfo(); });
+	});
+	atualizarNomesInfo();
+
 	$('#btncriartodos').click(function(){ iniciarCicloTodos(); });
 
 	$('#btncriaruma').click(function(){
@@ -486,7 +521,11 @@ document.addEventListener('DOMContentLoaded', function () {
 				var ativo = d && d.cicloAtivo;
 				if(d && d.cicloStatus){ $('#statuscriar').text(d.cicloStatus); }
 				if(ativo){ $('#btncriartodos').prop('disabled', true); $('#btncriaruma').prop('disabled', true); $('#btnpararciclo').show(); }
-				else { $('#btncriartodos').prop('disabled', false); $('#btncriaruma').prop('disabled', false); $('#btnpararciclo').hide(); reconcileAutoTries(); }
+				else {
+					$('#btncriartodos').prop('disabled', false); $('#btncriaruma').prop('disabled', false); $('#btnpararciclo').hide(); reconcileAutoTries();
+					if(window._cicloEstavaAtivo){ atualizarNomesInfo(); }
+				}
+				window._cicloEstavaAtivo = !!ativo;
 			});
 		}catch(ex){}
 	}, 1200);

@@ -1,0 +1,20 @@
+# ============================================================
+#  COOKIE AZUL - NOMES DAS PAGINAS
+# ------------------------------------------------------------
+#  Coloque UM NOME POR LINHA, um abaixo do outro.
+#  Linhas em branco e linhas que comecam com # sao ignoradas.
+#
+#  Os nomes sao usados EM ORDEM (de cima para baixo), um por
+#  pagina criada. Um nome usado nao e repetido.
+#  Quando os nomes acabarem, a extensao volta a sortear nomes
+#  automaticamente.
+#
+#  Para reaproveitar os nomes do zero, clique em
+#  "Zerar nomes usados" no popup da extensao.
+#
+#  Depois de editar este arquivo, clique no botao de
+#  atualizar (circulo com seta) da extensao em chrome://extensions
+# ============================================================
+Alice Wheeler
+Helen Brewe
+Alejandra Carte
