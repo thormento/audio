@@ -1,54 +1,55 @@
-# Gerador Interno de Imagens e Vídeos (fal.ai + Cloudinary)
+# Gerador Interno de Imagens e Vídeos
 
-MVP web para gerar imagens e vídeos em lote com a fal.ai, com fila, status por item, histórico e armazenamento no Cloudinary. Inclui também uma CLI de geração em massa por arquivo de prompts.
+Ferramenta interna (sem login/planos/créditos) para gerar imagens e vídeos em lote com IA, com narração, legenda, referências, download em ZIP e histórico. Tela única: painel de configuração à esquerda, resultados à direita.
 
 ## Requisitos
 
-- Node.js 18 ou superior
+- Node.js 18+
+- **ffmpeg** instalado no sistema (necessário para narração, legenda, thumbnail local e vídeo como referência)
 
-## Instalação
+## Instalação e configuração
 
 ```bash
 npm install
+export FAL_KEY=sua_chave_fal                               # obrigatória — só no backend
+export CLOUDINARY_URL=cloudinary://KEY:SECRET@CLOUD_NAME   # ou as 3 variáveis abaixo
+# CLOUDINARY_CLOUD_NAME= / CLOUDINARY_API_KEY= / CLOUDINARY_API_SECRET=
+npm start   # http://localhost:3000
 ```
 
-## Configuração (variáveis de ambiente)
+Sem Cloudinary o sistema funciona com armazenamento local em `data/files` (servido em `/files`). Com Cloudinary, os arquivos vão para `generated/{images,videos,audio}` e `references/{images,videos}`, com thumbnails por transformação de URL. Nenhuma chave chega ao frontend.
 
-```bash
-export FAL_KEY=sua_chave_fal            # obrigatória (nunca no código)
-export CLOUDINARY_URL=cloudinary://KEY:SECRET@CLOUD_NAME   # opcional
+## Funcionalidades
+
+- **Geração em lote** com `batchId`: cada item é um job independente com status próprio (`queued → generating → processing → completed | error`) e "Tentar novamente" individual; um erro não cancela o restante.
+- **Modelos** vêm da configuração central `models.config.js` (formatos, durações, referências e opções avançadas por modelo — a interface só mostra o que o modelo suporta). Para adicionar modelo, edite só esse arquivo, conferindo o schema em `https://fal.ai/models/<endpoint>/api`.
+- **Referência**: upload de imagem ou vídeo, ou reutilizar uma geração (sem novo upload). Image→Image, Image→Video; vídeo como referência extrai automaticamente um frame representativo (Video→Image / estratégia compatível para Video→Video).
+- **Narração** (vídeo): texto, voz, idioma e velocidade via `services/voiceService.js` (TTS na fal.ai). Áudio é combinado ao vídeo com ffmpeg e o vídeo final é o exibido/baixado.
+- **Legenda** (vídeo): texto da narração ou personalizado; posição inferior/centro; estilo padrão/destaque; sincroniza por timestamps quando a API de voz fornecer, senão distribui uniformemente pela duração.
+- **Downloads**: individual (`/api/download/:id`, arquivo final com nome correto), BAIXAR TODOS e BAIXAR SELECIONADOS (checkbox por card) — um único ZIP `generation-YYYY-MM-DD-HH-mm.zip` com `/images`, `/videos` e `metadata.txt`, montado por stream sem armazenamento permanente.
+- **Reaproveitar**: GERAR NOVAMENTE (mesmos parâmetros), GERAR MAIS NESTE MODELO (copia tudo para o formulário e você define a quantidade), USAR COMO REFERÊNCIA P/ IMAGEM ou P/ VÍDEO.
+- **Histórico**: últimas gerações em `data/generations.json` (banco simples em JSON), com nomes de arquivo sequenciais por dia: `image-2026-09-02-001.jpg`, `video-2026-09-02-001.mp4`.
+- Arquivos temporários de composição/frames ficam em `data/tmp` e são apagados ao fim de cada operação.
+
+## Arquitetura
+
+```
+server.js                     rotas HTTP + estáticos (sem lógica de negócio)
+models.config.js              catálogo central de modelos
+services/
+  generationService.js        fila, lotes, pipeline e status
+  providers/falProvider.js    interface padrão de provider (generateImage/generateVideo/tts)
+  voiceService.js             narração (TTS) — vozes/idiomas/velocidade configuráveis
+  subtitleService.js          geração de SRT + estilo da legenda
+  mediaProcessingService.js   ffmpeg: áudio+vídeo, legenda, frames, thumbnails
+  cloudinaryService.js        armazenamento (Cloudinary ou local)
+  zipService.js               ZIP por stream
+  db.js                       coleção generations em JSON
+public/                       frontend estático (tela única)
 ```
 
-Sem `CLOUDINARY_URL` o app funciona usando as URLs temporárias da fal.ai (sem armazenamento próprio, CDN ou thumbnails). Com Cloudinary, os arquivos vão para as pastas `images/`, `videos/` e `references/`, com thumbnails gerados por transformação.
-
-## Rodar o app web
-
-```bash
-npm start
-# abre http://localhost:3000
-```
-
-### Funcionalidades
-
-- **Tipo**: imagem ou vídeo; **modelos**: FLUX Schnell (rápido) e FLUX Dev (qualidade) para imagem, Kling 1.6 Standard/Pro para vídeo.
-- **Lote**: quantidade de 1 a 20; cada item entra na fila com status próprio (Na fila → Gerando → Processando → Concluído/Erro) e botão "Tentar novamente".
-- **Formato**: 1:1, 4:5, 9:16, 16:9 (imagem) / 9:16, 16:9, 1:1 (vídeo). **Duração**: apenas as aceitas pelo modelo (Kling: 5s e 10s).
-- **Referência**: upload opcional para image-to-image / image-to-video (FLUX Schnell não suporta).
-- **Configurações avançadas** (recolhidas): seed, steps, guidance, CFG e prompt negativo — só aparecem as compatíveis com o modelo escolhido.
-- **Cards de resultado**: preview/play, download, gerar novamente, copiar prompt, excluir.
-- **Histórico**: últimas 100 gerações em `data/history.json`.
-- **Melhorar prompt**: aprimoramento local simples (acrescenta descritores de qualidade), sem custo de API.
-
-## Editar os modelos
-
-O catálogo fica em `models.js` (endpoints, formatos, durações e opções avançadas de cada modelo). Antes de adicionar/trocar um modelo, confira o schema real em `https://fal.ai/models/<endpoint>/api`.
+Para trocar/adicionar provider de IA, implemente a mesma interface em `services/providers/` e registre em `providers`.
 
 ## CLI de geração em massa (imagens)
 
-Alternativa por linha de comando: edite `prompts.txt` (um prompt por linha) e o bloco de configuração no topo de `index.js`, então:
-
-```bash
-npm run cli
-```
-
-As imagens saem numeradas em `./saida` (001.jpg, 002.jpg, ...). Erros por item não interrompem os demais.
+Edite `prompts.txt` (um prompt por linha) e o bloco de configuração no topo de `index.js`, então `npm run cli`. Saída numerada em `./saida`.

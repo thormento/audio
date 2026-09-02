@@ -3,43 +3,48 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Gerador Interno — Imagens e Vídeos</title>
+  <title>Gerador</title>
   <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
-  <main>
-    <h1>Gerador Interno</h1>
+  <div class="layout">
+    <!-- ==================== PAINEL DE CONFIGURAÇÃO ==================== -->
+    <aside class="painel">
+      <h1>Gerador</h1>
 
-    <section class="painel">
-      <label>Tipo</label>
-      <div class="chips" id="tipo">
-        <button class="chip ativo" data-tipo="image">Imagem</button>
-        <button class="chip" data-tipo="video">Vídeo</button>
+      <div class="chips grandes" id="tipo">
+        <button class="chip ativo" data-tipo="image">IMAGEM</button>
+        <button class="chip" data-tipo="video">VÍDEO</button>
       </div>
 
       <label for="modelo">Modelo</label>
       <select id="modelo"></select>
 
       <label for="prompt">Prompt</label>
-      <textarea id="prompt" rows="3" placeholder="Descreva o que deseja gerar..."></textarea>
-      <div class="linha-botoes">
-        <button id="btn-melhorar" class="secundario">Melhorar prompt</button>
-        <button id="btn-limpar" class="secundario">Limpar</button>
+      <textarea id="prompt" rows="4" placeholder="Descreva o que deseja gerar…"></textarea>
+      <div class="linha">
+        <button id="btn-limpar" class="sec">Limpar</button>
+        <button id="btn-melhorar" class="sec">Melhorar prompt</button>
+        <button id="btn-copiar" class="sec">Copiar prompt</button>
       </div>
 
-      <label>Imagem de referência <span class="dica">(opcional — image-to-image / image-to-video)</span></label>
-      <div class="linha-botoes">
-        <input type="file" id="input-ref" accept="image/*" hidden />
-        <button id="btn-ref" class="secundario">Adicionar referência</button>
-        <span id="ref-status" class="dica"></span>
-        <button id="btn-ref-remover" class="secundario" hidden>Remover</button>
+      <label>Referência <span class="dica">(imagem ou vídeo)</span></label>
+      <input type="file" id="input-ref" accept="image/*,video/*" hidden />
+      <div id="ref-preview" hidden>
+        <img id="ref-img" hidden />
+        <video id="ref-video" muted loop hidden></video>
       </div>
+      <div class="linha">
+        <button id="btn-ref" class="sec">ADICIONAR REFERÊNCIA</button>
+        <button id="btn-ref-remover" class="sec" hidden>REMOVER REFERÊNCIA</button>
+      </div>
+      <div id="ref-aviso" class="dica"></div>
 
       <label>Quantidade</label>
-      <div class="linha-botoes">
-        <button id="qtd-menos" class="secundario">−</button>
+      <div class="linha">
+        <button id="qtd-menos" class="sec">−</button>
         <input type="number" id="quantidade" value="1" min="1" max="20" />
-        <button id="qtd-mais" class="secundario">+</button>
+        <button id="qtd-mais" class="sec">+</button>
       </div>
 
       <label>Formato</label>
@@ -50,24 +55,86 @@
         <div class="chips" id="duracoes"></div>
       </div>
 
+      <div id="bloco-narracao" hidden>
+        <label>Narração</label>
+        <div class="chips" id="narracao-toggle">
+          <button class="chip ativo" data-narr="0">SEM NARRAÇÃO</button>
+          <button class="chip" data-narr="1">COM NARRAÇÃO</button>
+        </div>
+        <div id="narracao-campos" hidden>
+          <label>Texto da narração</label>
+          <textarea id="narracao-texto" rows="3" placeholder="Texto que será narrado…"></textarea>
+          <label>Voz</label>
+          <select id="narracao-voz"></select>
+          <label>Idioma</label>
+          <select id="narracao-idioma"></select>
+          <label>Velocidade</label>
+          <div class="chips" id="narracao-vel">
+            <button class="chip" data-vel="lenta">Lenta</button>
+            <button class="chip ativo" data-vel="normal">Normal</button>
+            <button class="chip" data-vel="rapida">Rápida</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="bloco-legenda" hidden>
+        <label>Legenda</label>
+        <div class="chips" id="legenda-toggle">
+          <button class="chip ativo" data-leg="0">SEM LEGENDA</button>
+          <button class="chip" data-leg="1">COM LEGENDA</button>
+        </div>
+        <div id="legenda-campos" hidden>
+          <label>Fonte da legenda</label>
+          <div class="chips" id="legenda-fonte">
+            <button class="chip ativo" data-fonte="narration">Usar texto da narração</button>
+            <button class="chip" data-fonte="custom">Texto personalizado</button>
+          </div>
+          <textarea id="legenda-texto" rows="2" placeholder="Texto da legenda…" hidden></textarea>
+          <label>Posição</label>
+          <div class="chips" id="legenda-pos">
+            <button class="chip ativo" data-pos="inferior">Inferior</button>
+            <button class="chip" data-pos="centro">Centro</button>
+          </div>
+          <label>Estilo</label>
+          <div class="chips" id="legenda-estilo">
+            <button class="chip ativo" data-estilo="padrao">Padrão</button>
+            <button class="chip" data-estilo="destaque">Destaque</button>
+          </div>
+        </div>
+      </div>
+
       <details id="avancado">
-        <summary>Configurações avançadas</summary>
+        <summary>Configurações avançadas ▼</summary>
         <div id="avancado-campos"></div>
       </details>
 
       <button id="btn-gerar" class="principal">GERAR</button>
-    </section>
+      <div id="aviso-servidor" class="dica"></div>
+    </aside>
 
-    <section>
-      <h2>Gerações</h2>
-      <div id="cards" class="grade"></div>
-    </section>
+    <!-- ========================= RESULTADOS ========================= -->
+    <main class="conteudo">
+      <section>
+        <div class="barra">
+          <h2>RESULTADOS</h2>
+          <div class="linha">
+            <button id="btn-zip-todos" class="sec destaque">BAIXAR TODOS</button>
+            <button id="btn-zip-sel" class="sec">BAIXAR SELECIONADOS</button>
+            <button id="btn-gerar-mais" class="sec">GERAR MAIS</button>
+            <button id="btn-sel-todos" class="sec">Selecionar todos</button>
+            <button id="btn-sel-nenhum" class="sec">Desmarcar todos</button>
+            <button id="btn-limpar-res" class="sec">Limpar resultados</button>
+          </div>
+        </div>
+        <div id="cards" class="grade"></div>
+      </section>
 
-    <section>
-      <h2>Gerações recentes</h2>
-      <div id="historico" class="grade"></div>
-    </section>
-  </main>
+      <section>
+        <h2>Gerações recentes</h2>
+        <div id="historico" class="grade"></div>
+      </section>
+    </main>
+  </div>
   <script src="/app.js"></script>
 </body>
 </html>
