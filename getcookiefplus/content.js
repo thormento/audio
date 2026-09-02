@@ -9,7 +9,7 @@
   // Pausa após preencher o nome, antes de mexer na categoria (o usuário pediu >= 2s).
   const PAUSA_APOS_NOME = 2200;
   // Quanto tempo observar, após clicar em Criar, se a página foi realmente criada.
-  const VERIFICA_CRIACAO_MS = 12000;
+  const VERIFICA_CRIACAO_MS = 20000;
   let stepAtual = null;
 
   // ---------------- Nomes aleatórios (mulher americana, 2 palavras) ----------------
@@ -281,6 +281,61 @@
   }
 
   // ---------------- Automação ----------------
+  async function preencherNome(campos, nome) {
+    clicar(campos.nomeInput);
+    campos.nomeInput.focus();
+    // Digita caractere a caractere (o React do FB registra melhor) e reforça.
+    await digitar(campos.nomeInput, nome);
+    definirValor(campos.nomeInput, nome);
+    campos.nomeInput.dispatchEvent(new Event("blur", { bubbles: true }));
+  }
+
+  // Seleciona uma categoria (letra aleatória -> primeira opção).
+  // Devolve o nome da categoria escolhida ou null se não conseguiu.
+  async function selecionarCategoria(campos) {
+    clicar(campos.catLabel);
+    const catInput = await esperar(
+      () => [...campos.catLabel.querySelectorAll("input")].find(visivel) || null,
+      { timeout: 6000 }
+    );
+    if (!catInput) return null;
+    clicar(catInput);
+    catInput.focus();
+    await dormir(300);
+    definirValor(catInput, "");
+
+    const letra = letraAleatoria();
+    await digitar(catInput, letra);
+
+    const opcao = await esperar(() => primeiraOpcao(), { timeout: 9000 });
+    if (!opcao) return null;
+    const nomeCategoria = txt(opcao) || "(categoria)";
+
+    // 1) teclado: seta para baixo + Enter
+    await dormir(300);
+    teclar(catInput, "ArrowDown", "ArrowDown", 40);
+    await dormir(300);
+    teclar(catInput, "Enter", "Enter", 13);
+    await dormir(700);
+    // 2) lista ainda aberta? clique real na primeira opção
+    if (primeiraOpcao()) {
+      clicarReal(primeiraOpcao());
+      await dormir(600);
+    }
+    // 3) ainda aberta? clique sintético
+    if (primeiraOpcao()) {
+      const op = primeiraOpcao();
+      if (op) clicar(op);
+      await dormir(500);
+    }
+    return nomeCategoria;
+  }
+
+  function botaoCriarHabilitado() {
+    const b = acharBotaoCriar();
+    return b && !estaDesabilitado(b) ? b : null;
+  }
+
   async function executar() {
     toast("Iniciando…", "trabalhando");
 
@@ -290,89 +345,67 @@
     });
     if (!campos) {
       toast("Erro: campos de nome/categoria não encontrados.", "erro");
-      return;
+      return { criada: false };
     }
 
     // 1) Nome (mulher, inglês)
     const nome = nomeAleatorio();
-    clicar(campos.nomeInput);
-    campos.nomeInput.focus();
-    definirValor(campos.nomeInput, nome);
-    campos.nomeInput.dispatchEvent(new Event("blur", { bubbles: true }));
+    await preencherNome(campos, nome);
     toast(`Nome: ${nome} — aguardando…`, "trabalhando");
-
-    // Pausa pedida antes de ir para a categoria (>= 2s).
     await dormir(PAUSA_APOS_NOME);
 
-    // 2) Categoria: clica DENTRO do campo de categoria, digita uma letra
-    //    e seleciona a primeira opção.
-    clicar(campos.catLabel);
-    // O input real da categoria fica dentro do próprio <label> do campo.
-    const catInput = await esperar(
-      () => {
-        const i = [...campos.catLabel.querySelectorAll("input")].find(visivel);
-        return i || null;
-      },
-      { timeout: 6000 }
-    );
-    if (!catInput) {
-      toast("Erro: campo de categoria não abriu.", "erro");
-      return;
-    }
-    clicar(catInput);
-    catInput.focus();
-    await dormir(300);
-
-    const letra = letraAleatoria();
-    await digitar(catInput, letra);
-
-    // Espera as opções aparecerem para a letra digitada.
-    const opcao = await esperar(() => primeiraOpcao(), { timeout: 9000 });
-    if (!opcao) {
-      toast(`Erro: nenhuma categoria apareceu para "${letra}".`, "erro");
-      return;
-    }
-    const nomeCategoria = txt(opcao) || "(categoria)";
-
-    // Seleciona a primeira opção por teclado: seta para baixo + Enter.
-    await dormir(300);
-    teclar(catInput, "ArrowDown", "ArrowDown", 40);
-    await dormir(300);
-    teclar(catInput, "Enter", "Enter", 13);
-    await dormir(700);
-
-    // Fallback: se a lista continuar aberta, clica na primeira opção.
-    if (primeiraOpcao()) {
-      const op = primeiraOpcao();
-      if (op) clicar(op);
-      await dormir(500);
+    // 2) Categoria
+    let nomeCategoria = await selecionarCategoria(campos);
+    if (!nomeCategoria) {
+      toast("Erro: não consegui selecionar a categoria.", "erro");
+      return { criada: false };
     }
     toast(`Categoria: ${nomeCategoria} — aguardando 2s…`, "trabalhando");
-
-    // Espera pedida (2s) antes de clicar em Create Page.
     await dormir(2000);
 
-    // 3) Botão Criar Página: acha o botão e espera ele habilitar; clica.
+    // 3) Botão Criar Página: espera existir e HABILITAR. Se continuar
+    //    desabilitado, reforça nome + categoria e espera de novo (até 2x).
     const botao = await esperar(() => acharBotaoCriar());
     if (!botao) {
       toast("Erro: botão Criar Página não foi encontrado.", "erro");
-      return;
+      return { criada: false };
     }
-    // Espera ficar habilitado (até 6s), mas segue e clica de qualquer forma.
-    await esperar(() => (estaDesabilitado(botao) ? null : true), {
-      timeout: 6000,
-    });
-    // Clique pelas coordenadas (vence a camada de captura do FB).
-    clicarReal(botao);
-    await dormir(600);
-    // Reforço: se o botão ainda estiver na tela, tenta de novo.
-    const aindaBotao = acharBotaoCriar();
-    if (aindaBotao) clicarReal(aindaBotao);
-    avisarClique(); // a partir daqui, sair do formulário = página criada
-    toast(`Criando: "${nome}" · ${nomeCategoria} — verificando…`, "trabalhando");
+    let habil = await esperar(() => botaoCriarHabilitado(), { timeout: 12000 });
+    for (let r = 0; r < 2 && !habil; r++) {
+      toast(`Botão desabilitado — reforçando campos (${r + 1}/2)…`, "trabalhando");
+      const c2 = acharCampos();
+      if (c2.nomeInput) await preencherNome(c2, nome);
+      await dormir(800);
+      if (c2.catLabel) {
+        const nc = await selecionarCategoria(c2);
+        if (nc) nomeCategoria = nc;
+      }
+      await dormir(1500);
+      habil = await esperar(() => botaoCriarHabilitado(), { timeout: 8000 });
+    }
 
-    // Verifica se a página foi REALMENTE criada (saiu do formulário) ou deu erro.
-    const criada = await verificarCriacao();
+    avisarClique(); // a partir daqui, sinal de sucesso = página criada
+    toast(`Criando: "${nome}" · ${nomeCategoria}…`, "trabalhando");
+
+    // 4) Clica e verifica. Só clica DE NOVO se o botão continuar presente e
+    //    habilitado (o clique não "pegou"); se sumiu/desabilitou, está
+    //    processando — não reclicar para não duplicar.
+    let criada = false;
+    for (let tent = 0; tent < 3 && !criada; tent++) {
+      const b = botaoCriarHabilitado() || acharBotaoCriar();
+      if (!b) break;
+      clicarReal(b);
+      try {
+        if (typeof b.click === "function") b.click();
+      } catch (_) {}
+      criada = await verificarCriacao(7000);
+      if (criada || temErroCriacao()) break;
+      if (!botaoCriarHabilitado()) break; // processando
+      toast(`Clique não pegou — tentando de novo (${tent + 2}/3)…`, "trabalhando");
+      await dormir(800);
+    }
+    if (!criada && !temErroCriacao()) criada = await verificarCriacao(VERIFICA_CRIACAO_MS);
+
     toast(
       criada ? `✓ Página criada: "${nome}"` : `✗ Não criou: "${nome}"`,
       criada ? "ok" : "erro"
@@ -381,6 +414,22 @@
   }
 
   // ---------------- Verificação do resultado ----------------
+  // O FB costuma FICAR na mesma URL e mostrar, por exemplo:
+  // "Sydney Watson was created. You can now add images or go to your Page…"
+  const FRASES_SUCESSO = [
+    "was created",
+    "you can now add images",
+    "go to your page",
+    "foi criada",
+    "agora você pode adicionar",
+    "agora voce pode adicionar",
+    "ir para sua página",
+    "ir para sua pagina",
+    "ir para a página",
+    "page created",
+    "página criada",
+    "pagina criada",
+  ];
   const FRASES_ERRO = [
     "error occurred while creating",
     "ocorreu um erro ao criar",
@@ -391,11 +440,17 @@
     "algo deu errado",
   ];
 
+  function textoPagina() {
+    return ((document.body && document.body.innerText) || "").toLowerCase();
+  }
+  function temSucessoCriacao() {
+    const t = textoPagina();
+    return FRASES_SUCESSO.some((f) => t.includes(f));
+  }
   function temErroCriacao() {
-    const t = ((document.body && document.body.innerText) || "").toLowerCase();
+    const t = textoPagina();
     return FRASES_ERRO.some((f) => t.includes(f));
   }
-
   function saiuDoFormulario() {
     const u = location.href.toLowerCase();
     if (u.indexOf("/pages/creation") > -1) return false;
@@ -403,10 +458,10 @@
     return true;
   }
 
-  async function verificarCriacao() {
-    const limite = Date.now() + VERIFICA_CRIACAO_MS;
+  async function verificarCriacao(ms) {
+    const limite = Date.now() + (ms || VERIFICA_CRIACAO_MS);
     while (Date.now() < limite) {
-      if (saiuDoFormulario()) return true;
+      if (temSucessoCriacao() || saiuDoFormulario()) return true;
       if (temErroCriacao()) return false;
       await dormir(300);
     }
