@@ -50,6 +50,18 @@ public/                       frontend estático (tela única)
 
 Para trocar/adicionar provider de IA, implemente a mesma interface em `services/providers/` e registre em `providers`.
 
+## Colocar online (deploy)
+
+O repositório inclui um `Dockerfile` com Node + ffmpeg, pronto para Render, Railway ou Fly.io (qualquer host que rode Docker). Configure as variáveis de ambiente no painel do host:
+
+```
+FAL_KEY=...            # obrigatória
+CLOUDINARY_URL=...     # recomendada em produção (o disco desses hosts é efêmero)
+APP_PASSWORD=...       # RECOMENDADA: exige senha (Basic Auth) para acessar o app
+```
+
+Sem `APP_PASSWORD` o app fica aberto para qualquer pessoa com a URL — que poderá gastar seus créditos da fal.ai. Em hosts com disco efêmero, o histórico (`data/generations.json`) zera a cada deploy; com Cloudinary ativo os arquivos gerados permanecem.
+
 ## CLI de geração em massa (imagens)
 
 Edite `prompts.txt` (um prompt por linha) e o bloco de configuração no topo de `index.js`, então `npm run cli`. Saída numerada em `./saida`.

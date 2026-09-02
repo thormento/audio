@@ -56,10 +56,26 @@ function servirArquivo(res, caminho) {
   fs.createReadStream(caminho).pipe(res);
 }
 
+// Proteção simples para exposição na internet: defina APP_PASSWORD para exigir
+// senha (HTTP Basic Auth — o navegador pede usuário/senha; usuário é livre).
+// Sem APP_PASSWORD o app fica aberto — use assim apenas em rede interna.
+const APP_PASSWORD = process.env.APP_PASSWORD || null;
+function autorizado(req) {
+  if (!APP_PASSWORD) return true;
+  const auth = req.headers.authorization || "";
+  if (!auth.startsWith("Basic ")) return false;
+  const senha = Buffer.from(auth.slice(6), "base64").toString().split(":").slice(1).join(":");
+  return senha === APP_PASSWORD;
+}
+
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://localhost:${PORT}`);
   const rota = `${req.method} ${url.pathname}`;
   try {
+    if (!autorizado(req)) {
+      res.writeHead(401, { "WWW-Authenticate": 'Basic realm="Gerador"', "Content-Type": "text/plain" });
+      return res.end("Acesso restrito");
+    }
     if (rota === "GET /api/models") return json(res, 200, MODELS);
 
     if (rota === "GET /api/config") {
