@@ -17,7 +17,8 @@
 const URL_CRIACAO = "https://www.facebook.com/pages/creation/";
 const PASSO_TIMEOUT_MIN = 1.5; // tempo máx. por perfil antes de seguir em frente
 const ESPERA_FINAL_MS = 5000; // espera antes de fechar as abas no fim do ciclo
-const ESPERA_CONFIRMACAO_MS = 10000; // espera entre perfis, para confirmar se criou
+const ESPERA_CONFIRMACAO_MS = 10000; // caso incerto: espera e reconfere se criou
+const ESPERA_CURTA_MS = 3000; // já criou, ou não criou de forma definitiva: só 3s
 const FOLGA_NAVEGACAO_MS = 4000; // folga após a aba sair do formulário
 
 const DOMINIOS_FB = [
@@ -232,7 +233,7 @@ async function marcarClique(stepId) {
   await setLocal({ cicloEstado: st });
 }
 
-async function avancar(stepId, criadaMsg) {
+async function avancar(stepId, criadaMsg, definitivoMsg) {
   const d = await getLocal(["cicloEstado", "cicloParar"]);
   const st = d.cicloEstado;
   if (!st || !st.awaiting) return; // evita avanço duplicado (mensagem + watchdog)
@@ -248,17 +249,29 @@ async function avancar(stepId, criadaMsg) {
   const posicao = st.index + 1 + "/" + st.profiles.length;
   let criada = !!(st.criada || criadaMsg);
 
-  // Espera 10s para a confirmação aparecer e reconfere na própria aba.
-  await setLocal({
-    cicloStatus: "Perfil " + posicao + ": " + rotulo + " — aguardando 10s para confirmar a criação…",
-  });
-  await dormir(ESPERA_CONFIRMACAO_MS);
+  // Já criou, ou não criou de forma DEFINITIVA (clique não pegou 2x, erro do
+  // FB, campos não encontrados): não há o que reconferir — espera 3s e segue.
+  // Caso incerto (clique pegou, mas a confirmação não apareceu): espera 10s e
+  // reconfere na própria aba.
+  const definitivo = criada || !!definitivoMsg;
+  if (definitivo) {
+    await setLocal({
+      cicloStatus: "Perfil " + posicao + ": " + rotulo +
+        (criada ? " — ✓ criada, próximo em 3s…" : " — ✗ não criou, próximo em 3s…"),
+    });
+    await dormir(ESPERA_CURTA_MS);
+  } else {
+    await setLocal({
+      cicloStatus: "Perfil " + posicao + ": " + rotulo + " — aguardando 10s para confirmar a criação…",
+    });
+    await dormir(ESPERA_CONFIRMACAO_MS);
+  }
 
   // Se o ciclo foi parado/finalizado durante a espera, não faz mais nada.
   const d2 = await getLocal(["cicloEstado", "cicloParar"]);
   const st2 = d2.cicloEstado;
   if (!st2) return;
-  if (!criada && st2.tabAtual) criada = await checarSucessoNaAba(st2.tabAtual);
+  if (!definitivo && st2.tabAtual) criada = await checarSucessoNaAba(st2.tabAtual);
 
   if (perfil) {
     await registrarResultado(perfil.uid, criada);
@@ -347,7 +360,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.action === "criacaoConcluida") {
     getLocal(["cicloEstado"]).then(async (d) => {
       if (d.cicloEstado) {
-        avancar(msg.stepId, !!msg.criada);
+        avancar(msg.stepId, !!msg.criada, !!msg.definitivo);
       } else if (msg.criada) {
         // "Criar apenas 1 página": credita a página ao perfil logado agora.
         const uid = await cookieAtualUid();

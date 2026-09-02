@@ -345,7 +345,7 @@
     });
     if (!campos) {
       toast("Erro: campos de nome/categoria não encontrados.", "erro");
-      return { criada: false };
+      return { criada: false, definitivo: true };
     }
 
     // 1) Nome (mulher, inglês)
@@ -358,7 +358,7 @@
     let nomeCategoria = await selecionarCategoria(campos);
     if (!nomeCategoria) {
       toast("Erro: não consegui selecionar a categoria.", "erro");
-      return { criada: false };
+      return { criada: false, definitivo: true };
     }
     toast(`Categoria: ${nomeCategoria} — aguardando 2s…`, "trabalhando");
     await dormir(2000);
@@ -368,7 +368,7 @@
     const botao = await esperar(() => acharBotaoCriar());
     if (!botao) {
       toast("Erro: botão Criar Página não foi encontrado.", "erro");
-      return { criada: false };
+      return { criada: false, definitivo: true };
     }
     let habil = await esperar(() => botaoCriarHabilitado(), { timeout: 12000 });
     for (let r = 0; r < 2 && !habil; r++) {
@@ -387,30 +387,46 @@
     avisarClique(); // a partir daqui, sinal de sucesso = página criada
     toast(`Criando: "${nome}" · ${nomeCategoria}…`, "trabalhando");
 
-    // 4) Clica e verifica. Só clica DE NOVO se o botão continuar presente e
-    //    habilitado (o clique não "pegou"); se sumiu/desabilitou, está
-    //    processando — não reclicar para não duplicar.
+    // 4) Clica e verifica. No máximo 2 cliques. Só clica DE NOVO se o botão
+    //    continuar presente e habilitado (o clique não "pegou"); se sumiu ou
+    //    desabilitou, está processando — não reclicar para não duplicar.
+    //    Se nem o 2º clique pegar, o Facebook travou a criação: desiste.
     let criada = false;
-    for (let tent = 0; tent < 3 && !criada; tent++) {
+    let cliquePegou = false;
+    for (let tent = 0; tent < 2 && !criada; tent++) {
       const b = botaoCriarHabilitado() || acharBotaoCriar();
-      if (!b) break;
+      if (!b) { cliquePegou = true; break; } // botão sumiu: submeteu
       clicarReal(b);
       try {
         if (typeof b.click === "function") b.click();
       } catch (_) {}
       criada = await verificarCriacao(7000);
       if (criada || temErroCriacao()) break;
-      if (!botaoCriarHabilitado()) break; // processando
-      toast(`Clique não pegou — tentando de novo (${tent + 2}/3)…`, "trabalhando");
-      await dormir(800);
+      if (!botaoCriarHabilitado()) { cliquePegou = true; break; } // processando
+      if (tent === 0) {
+        toast("Clique não pegou — tentando de novo (2/2)…", "trabalhando");
+        await dormir(800);
+      }
     }
-    if (!criada && !temErroCriacao()) criada = await verificarCriacao(VERIFICA_CRIACAO_MS);
+
+    if (!criada && temErroCriacao()) {
+      toast(`✗ Não criou: "${nome}" — erro do Facebook. Pulando em 3s…`, "erro");
+      return { criada: false, definitivo: true };
+    }
+    if (!criada && !cliquePegou) {
+      // 2 cliques sem efeito: o Facebook não está aceitando criar. Não insiste.
+      toast(`✗ Não criou: "${nome}" — clique não pegou (2/2). Pulando em 3s…`, "erro");
+      return { criada: false, definitivo: true };
+    }
+    // O clique pegou: dá tempo para a confirmação aparecer.
+    if (!criada) criada = await verificarCriacao(VERIFICA_CRIACAO_MS);
 
     toast(
       criada ? `✓ Página criada: "${nome}"` : `✗ Não criou: "${nome}"`,
       criada ? "ok" : "erro"
     );
-    return { criada };
+    // Se não criou mesmo com o clique pegando, é incerto: o ciclo reconfere.
+    return { criada, definitivo: criada };
   }
 
   // ---------------- Verificação do resultado ----------------
@@ -483,22 +499,23 @@
       stepAtual = stepId;
       chrome.storage.local.set({ pendingCreate: false }, () => {
         executar()
-          .then((r) => concluir(true, stepId, !!(r && r.criada)))
+          .then((r) => concluir(true, stepId, !!(r && r.criada), !!(r && r.definitivo)))
           .catch((e) => {
             toast("Erro: " + (e?.message || e), "erro");
-            concluir(false, stepId, false);
+            concluir(false, stepId, false, false);
           });
       });
     });
   }
 
-  function concluir(ok, stepId, criada) {
+  function concluir(ok, stepId, criada, definitivo) {
     try {
       chrome.runtime.sendMessage({
         action: "criacaoConcluida",
         ok: ok,
         stepId: stepId,
         criada: !!criada,
+        definitivo: !!definitivo,
       });
     } catch (e) {}
   }
