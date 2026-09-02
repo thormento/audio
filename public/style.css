@@ -1,0 +1,43 @@
+* { box-sizing: border-box; }
+body { margin: 0; font-family: system-ui, sans-serif; background: #111318; color: #e7e9ee; }
+main { max-width: 900px; margin: 0 auto; padding: 24px 16px 64px; }
+h1 { font-size: 1.5rem; }
+h2 { font-size: 1.1rem; margin-top: 40px; border-top: 1px solid #2a2e39; padding-top: 24px; }
+label { display: block; margin: 18px 0 6px; font-weight: 600; font-size: 0.9rem; }
+.dica { font-weight: 400; color: #8a90a0; font-size: 0.8rem; }
+.painel { background: #191c24; border: 1px solid #2a2e39; border-radius: 12px; padding: 20px; }
+select, textarea, input[type="number"] {
+  width: 100%; background: #111318; color: #e7e9ee; border: 1px solid #2a2e39;
+  border-radius: 8px; padding: 10px; font: inherit;
+}
+input[type="number"] { width: 80px; text-align: center; }
+.chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip { background: #111318; color: #e7e9ee; border: 1px solid #2a2e39; border-radius: 20px; padding: 8px 16px; cursor: pointer; }
+.chip.ativo { background: #3b5bfd; border-color: #3b5bfd; }
+.linha-botoes { display: flex; gap: 8px; align-items: center; margin-top: 8px; flex-wrap: wrap; }
+button { font: inherit; cursor: pointer; }
+.secundario { background: #232734; color: #e7e9ee; border: 1px solid #2a2e39; border-radius: 8px; padding: 8px 14px; }
+.secundario:hover { background: #2a2f3f; }
+.principal {
+  width: 100%; margin-top: 24px; padding: 14px; font-size: 1.05rem; font-weight: 700;
+  background: #3b5bfd; color: #fff; border: 0; border-radius: 10px;
+}
+.principal:disabled { opacity: 0.5; cursor: default; }
+details { margin-top: 18px; border: 1px solid #2a2e39; border-radius: 8px; padding: 10px 14px; }
+summary { cursor: pointer; font-weight: 600; }
+#avancado-campos label { margin-top: 12px; }
+.grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; margin-top: 16px; }
+.card { background: #191c24; border: 1px solid #2a2e39; border-radius: 10px; overflow: hidden; }
+.card .midia { width: 100%; aspect-ratio: 1; object-fit: cover; background: #0c0e12; display: block; }
+.card .corpo { padding: 10px; font-size: 0.8rem; }
+.card .status { font-weight: 700; }
+.status.na_fila { color: #8a90a0; }
+.status.gerando, .status.processando { color: #e8b93e; }
+.status.concluido { color: #4ecb71; }
+.status.erro { color: #ff6b6b; }
+.card .prompt { color: #8a90a0; margin: 6px 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.card .acoes { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.card .acoes button, .card .acoes a { font-size: 0.75rem; padding: 5px 9px; text-decoration: none; }
+.erro-msg { color: #ff6b6b; word-break: break-word; }
+@keyframes girar { to { transform: rotate(360deg); } }
+.spinner { width: 28px; height: 28px; border: 3px solid #2a2e39; border-top-color: #3b5bfd; border-radius: 50%; animation: girar 1s linear infinite; margin: 40px auto; }

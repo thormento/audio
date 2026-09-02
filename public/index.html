@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gerador Interno — Imagens e Vídeos</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <main>
+    <h1>Gerador Interno</h1>
+
+    <section class="painel">
+      <label>Tipo</label>
+      <div class="chips" id="tipo">
+        <button class="chip ativo" data-tipo="image">Imagem</button>
+        <button class="chip" data-tipo="video">Vídeo</button>
+      </div>
+
+      <label for="modelo">Modelo</label>
+      <select id="modelo"></select>
+
+      <label for="prompt">Prompt</label>
+      <textarea id="prompt" rows="3" placeholder="Descreva o que deseja gerar..."></textarea>
+      <div class="linha-botoes">
+        <button id="btn-melhorar" class="secundario">Melhorar prompt</button>
+        <button id="btn-limpar" class="secundario">Limpar</button>
+      </div>
+
+      <label>Imagem de referência <span class="dica">(opcional — image-to-image / image-to-video)</span></label>
+      <div class="linha-botoes">
+        <input type="file" id="input-ref" accept="image/*" hidden />
+        <button id="btn-ref" class="secundario">Adicionar referência</button>
+        <span id="ref-status" class="dica"></span>
+        <button id="btn-ref-remover" class="secundario" hidden>Remover</button>
+      </div>
+
+      <label>Quantidade</label>
+      <div class="linha-botoes">
+        <button id="qtd-menos" class="secundario">−</button>
+        <input type="number" id="quantidade" value="1" min="1" max="20" />
+        <button id="qtd-mais" class="secundario">+</button>
+      </div>
+
+      <label>Formato</label>
+      <div class="chips" id="formatos"></div>
+
+      <div id="bloco-duracao" hidden>
+        <label>Duração</label>
+        <div class="chips" id="duracoes"></div>
+      </div>
+
+      <details id="avancado">
+        <summary>Configurações avançadas</summary>
+        <div id="avancado-campos"></div>
+      </details>
+
+      <button id="btn-gerar" class="principal">GERAR</button>
+    </section>
+
+    <section>
+      <h2>Gerações</h2>
+      <div id="cards" class="grade"></div>
+    </section>
+
+    <section>
+      <h2>Gerações recentes</h2>
+      <div id="historico" class="grade"></div>
+    </section>
+  </main>
+  <script src="/app.js"></script>
+</body>
+</html>
