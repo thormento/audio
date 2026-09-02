@@ -1,0 +1,335 @@
+/* Painel flutuante do Grok Imagine Mass Gen.
+   Todos os seletores usam o prefixo gmg- para não colidir com o site. */
+
+#gmg-panel {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  width: 400px;
+  max-height: calc(100vh - 32px);
+  display: flex;
+  flex-direction: column;
+  background: #111214;
+  color: #e6e6e6;
+  border: 1px solid #2a2b2f;
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 12px;
+  line-height: 1.4;
+  z-index: 2147483647;
+  overflow: hidden;
+  user-select: none;
+}
+
+#gmg-panel * {
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+#gmg-panel.gmg-hidden {
+  display: none;
+}
+
+#gmg-panel.gmg-minimized .gmg-body {
+  display: none;
+}
+
+/* Cabeçalho, também é a área de arrastar */
+#gmg-panel .gmg-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: #1a1b1f;
+  border-bottom: 1px solid #2a2b2f;
+  cursor: move;
+}
+
+#gmg-panel .gmg-title {
+  font-weight: 600;
+  font-size: 13px;
+  color: #fff;
+  white-space: nowrap;
+}
+
+#gmg-panel .gmg-counters {
+  flex: 1;
+  display: flex;
+  gap: 6px;
+  font-size: 11px;
+  color: #a0a3ab;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+#gmg-panel .gmg-counter {
+  background: #26272c;
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+#gmg-panel .gmg-header-btn {
+  width: 24px;
+  height: 24px;
+  border: 1px solid #33353b;
+  background: #222327;
+  color: #ddd;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  padding: 0;
+}
+
+#gmg-panel .gmg-header-btn:hover {
+  background: #2f3136;
+}
+
+/* Corpo com rolagem */
+#gmg-panel .gmg-body {
+  overflow-y: auto;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  user-select: text;
+}
+
+#gmg-panel .gmg-body > * {
+  flex-shrink: 0;
+}
+
+#gmg-panel .gmg-label {
+  display: block;
+  color: #b8bbc4;
+  margin-bottom: 3px;
+  font-size: 11px;
+}
+
+#gmg-panel textarea,
+#gmg-panel input[type="text"],
+#gmg-panel input[type="number"] {
+  width: 100%;
+  background: #1a1b1f;
+  color: #f0f0f0;
+  border: 1px solid #33353b;
+  border-radius: 8px;
+  padding: 6px 8px;
+  font-size: 12px;
+  outline: none;
+}
+
+#gmg-panel textarea:focus,
+#gmg-panel input:focus {
+  border-color: #6b6f7a;
+}
+
+#gmg-panel textarea {
+  min-height: 110px;
+  resize: vertical;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11.5px;
+}
+
+#gmg-panel .gmg-row {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+#gmg-panel .gmg-row > * {
+  flex: 1;
+  min-width: 0;
+}
+
+#gmg-panel .gmg-check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #d0d2d8;
+  cursor: pointer;
+}
+
+#gmg-panel .gmg-check input {
+  margin: 0;
+  accent-color: #7c8cff;
+}
+
+#gmg-panel .gmg-radio-group {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+#gmg-panel select {
+  width: 100%;
+  background: #1a1b1f;
+  color: #f0f0f0;
+  border: 1px solid #33353b;
+  border-radius: 8px;
+  padding: 6px 8px;
+  font-size: 12px;
+}
+
+/* Botões */
+#gmg-panel .gmg-buttons {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+#gmg-panel .gmg-btn {
+  flex: 1;
+  min-width: 90px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1px solid #33353b;
+  background: #222327;
+  color: #f0f0f0;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: background 0.15s;
+}
+
+#gmg-panel .gmg-btn:hover:not(:disabled) {
+  background: #2f3136;
+}
+
+#gmg-panel .gmg-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+#gmg-panel .gmg-btn-primary {
+  background: #4f5bd5;
+  border-color: #5b67e0;
+}
+
+#gmg-panel .gmg-btn-primary:hover:not(:disabled) {
+  background: #5d69e6;
+}
+
+#gmg-panel .gmg-btn-danger {
+  background: #7a2a2a;
+  border-color: #8f3535;
+}
+
+#gmg-panel .gmg-btn-danger:hover:not(:disabled) {
+  background: #933333;
+}
+
+#gmg-panel .gmg-btn-small {
+  flex: 0 0 auto;
+  padding: 4px 8px;
+  font-size: 11px;
+  min-width: 0;
+}
+
+/* Progresso */
+#gmg-panel .gmg-progress {
+  height: 8px;
+  background: #1f2024;
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid #2a2b2f;
+}
+
+#gmg-panel .gmg-progress-bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #4f5bd5, #8b5cf6);
+  transition: width 0.3s;
+}
+
+#gmg-panel .gmg-status {
+  color: #c8cad0;
+  font-size: 11.5px;
+  min-height: 16px;
+}
+
+/* Log */
+#gmg-panel .gmg-log {
+  height: 150px;
+  overflow-y: auto;
+  background: #0b0c0e;
+  border: 1px solid #2a2b2f;
+  border-radius: 8px;
+  padding: 6px 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
+  line-height: 1.45;
+  color: #c8cad0;
+}
+
+#gmg-panel .gmg-log-line {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+#gmg-panel .gmg-log-time {
+  color: #6f727c;
+  margin-right: 6px;
+}
+
+#gmg-panel .gmg-log-ok {
+  color: #6ee7a0;
+}
+
+#gmg-panel .gmg-log-err {
+  color: #ff7b7b;
+}
+
+#gmg-panel .gmg-log-warn {
+  color: #ffd166;
+}
+
+/* Seção avançada */
+#gmg-panel details.gmg-advanced {
+  border: 1px solid #2a2b2f;
+  border-radius: 8px;
+  padding: 6px 8px;
+}
+
+#gmg-panel details.gmg-advanced summary {
+  cursor: pointer;
+  color: #b8bbc4;
+  font-weight: 500;
+  outline: none;
+}
+
+#gmg-panel details.gmg-advanced .gmg-advanced-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+#gmg-panel .gmg-hint {
+  color: #7d808a;
+  font-size: 10.5px;
+}
+
+#gmg-panel .gmg-resume-box {
+  display: none;
+  background: #1f2433;
+  border: 1px solid #3b4470;
+  border-radius: 8px;
+  padding: 8px;
+  gap: 6px;
+  align-items: center;
+}
+
+#gmg-panel .gmg-resume-box.gmg-visible {
+  display: flex;
+}
+
+#gmg-panel .gmg-resume-box span {
+  flex: 1;
+  color: #d0d4e8;
+}
+
+#gmg-panel .gmg-file-input {
+  display: none;
+}

@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "Grok Imagine Mass Gen",
+  "version": "1.0.0",
+  "description": "Geração em massa a partir de uma lista de prompts e download em massa dos resultados no Grok Imagine. Automatiza apenas os cliques que você faria manualmente.",
+  "permissions": ["downloads", "storage"],
+  "host_permissions": ["https://grok.com/*", "https://*.grok.com/*"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://grok.com/*", "https://*.grok.com/*"],
+      "js": ["content.js"],
+      "css": ["panel.css"],
+      "run_at": "document_idle"
+    }
+  ]
+}
