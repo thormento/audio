@@ -1,0 +1,1484 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sorteio</title>
+<meta name="description" content="Cadastre seu nome e seu @ do Instagram para participar do sorteio.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@800&family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --azul: #2438E0;
+    --azul-escuro: #16228F;
+    --amarelo: #FFD447;
+    --tinta: #1C1F4A;
+    --papel: #FFFDF5;
+    --rosa: #FF5C8A;
+    --cinza: #6B6F99;
+    --fonte-titulo: "Bricolage Grotesque", "Arial Black", Impact, "Helvetica Neue", Arial, sans-serif;
+    --fonte-texto: "Manrope", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: var(--fonte-texto);
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--tinta);
+    background-color: var(--azul);
+    background-image: radial-gradient(rgba(255, 255, 255, 0.16) 1.4px, transparent 1.6px);
+    background-size: 22px 22px;
+  }
+
+  [hidden] { display: none !important; }
+
+  h1, h2, h3 {
+    font-family: var(--fonte-titulo);
+    font-weight: 800;
+    line-height: 1.05;
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+
+  p { margin: 0; }
+
+  button, input {
+    font: inherit;
+    color: inherit;
+  }
+
+  :focus-visible {
+    outline: 3px solid var(--amarelo);
+    outline-offset: 3px;
+  }
+
+  .bilhete :focus-visible,
+  .caixa :focus-visible,
+  .login :focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--tinta), 0 0 0 6px var(--amarelo);
+  }
+
+  .visualmente-oculto {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /* ---------- Mensagens ---------- */
+  .erro {
+    background: var(--rosa);
+    color: #fff;
+    font-weight: 700;
+    padding: 12px 14px;
+    border-radius: 12px;
+    margin-bottom: 16px;
+    font-size: 15px;
+  }
+
+  /* ---------- Página de cadastro ---------- */
+  .pagina-cadastro {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 16px 72px;
+    overflow-x: clip;
+  }
+
+  .bilhete {
+    position: relative;
+    width: 100%;
+    max-width: 460px;
+    background: var(--amarelo);
+    border-radius: 28px;
+    box-shadow: 0 12px 0 var(--azul-escuro);
+  }
+
+  .bilhete__topo {
+    padding: 34px 32px 26px;
+    text-align: center;
+  }
+
+  .bilhete__organizador {
+    font-weight: 800;
+    font-size: 13px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--azul);
+    margin-bottom: 12px;
+  }
+
+  .bilhete__premio {
+    font-size: clamp(34px, 9vw, 48px);
+    margin-bottom: 12px;
+  }
+
+  .bilhete__descricao {
+    color: var(--tinta);
+    font-size: 15px;
+    opacity: 0.9;
+  }
+
+  .picote {
+    position: relative;
+    height: 0;
+    border-top: 3px dashed rgba(28, 31, 74, 0.35);
+    margin: 0 22px;
+  }
+
+  .picote::before,
+  .picote::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--azul);
+    transform: translateY(calc(-50% - 1.5px));
+  }
+
+  .picote::before { left: -38px; }
+  .picote::after { right: -38px; }
+
+  .bilhete__corpo {
+    padding: 28px 32px 32px;
+  }
+
+  .campo { margin-bottom: 18px; }
+
+  .campo label {
+    display: block;
+    font-weight: 800;
+    font-size: 14px;
+    margin-bottom: 6px;
+  }
+
+  .campo input {
+    width: 100%;
+    height: 52px;
+    padding: 0 16px;
+    border: 2px solid var(--tinta);
+    border-radius: 14px;
+    background: var(--papel);
+    font-size: 17px;
+    font-weight: 600;
+  }
+
+  .campo input::placeholder { color: var(--cinza); font-weight: 400; }
+
+  .campo-ig {
+    position: relative;
+  }
+
+  .campo-ig .arroba {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-weight: 800;
+    font-size: 18px;
+    color: var(--cinza);
+    pointer-events: none;
+  }
+
+  .campo-ig input { padding-left: 38px; }
+
+  .aceite {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    margin: 4px 0 22px;
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .aceite input {
+    flex: 0 0 auto;
+    width: 22px;
+    height: 22px;
+    margin: 1px 0 0;
+    accent-color: var(--tinta);
+  }
+
+  .aceite a { color: var(--azul); }
+
+  .botao {
+    display: block;
+    width: 100%;
+    height: 58px;
+    border: 0;
+    border-radius: 16px;
+    background: var(--tinta);
+    color: var(--amarelo);
+    font-family: var(--fonte-titulo);
+    font-weight: 800;
+    font-size: 21px;
+    cursor: pointer;
+    box-shadow: 0 6px 0 var(--azul-escuro);
+    transform: translateY(0);
+    transition: transform 0.08s ease, box-shadow 0.08s ease;
+  }
+
+  .botao:active:not(:disabled) {
+    transform: translateY(6px);
+    box-shadow: 0 0 0 var(--azul-escuro);
+  }
+
+  .botao:disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+
+  .bilhete__encerra {
+    text-align: center;
+    font-size: 13px;
+    font-weight: 700;
+    margin-top: 18px;
+    color: var(--azul-escuro);
+  }
+
+  .sucesso {
+    text-align: center;
+  }
+
+  .sucesso__rotulo {
+    font-weight: 800;
+    font-size: 13px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--azul);
+  }
+
+  .sucesso__numero {
+    font-family: var(--fonte-titulo);
+    font-size: 84px;
+    line-height: 1;
+    margin: 8px 0 6px;
+    letter-spacing: 0.04em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .sucesso__titulo {
+    font-size: 26px;
+    margin-bottom: 10px;
+  }
+
+  .sucesso__texto {
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  .aviso-teste {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 50;
+    background: var(--tinta);
+    color: var(--amarelo);
+    text-align: center;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 10px 16px;
+  }
+
+  /* ---------- Painel ---------- */
+  .login-wrap {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 16px 72px;
+  }
+
+  .login {
+    width: 100%;
+    max-width: 380px;
+    background: var(--papel);
+    border-radius: 22px;
+    padding: 30px 28px;
+    box-shadow: 0 12px 0 var(--azul-escuro);
+  }
+
+  .login h1 { font-size: 28px; margin-bottom: 6px; }
+  .login p { color: var(--cinza); font-size: 14px; margin-bottom: 18px; }
+  .login .campo input { background: #fff; }
+
+  .painel {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 28px 16px 80px;
+  }
+
+  .painel-cab {
+    color: #fff;
+    margin-bottom: 22px;
+  }
+
+  .painel-cab h1 { font-size: clamp(28px, 5vw, 40px); }
+  .painel-cab p { color: var(--amarelo); font-weight: 700; margin-top: 4px; }
+
+  .painel-grade {
+    display: grid;
+    grid-template-columns: 340px minmax(0, 1fr);
+    gap: 22px;
+    align-items: start;
+  }
+
+  .lateral { grid-column: 1; grid-row: 1; display: grid; gap: 22px; min-width: 0; }
+  .palco-col { grid-column: 2; grid-row: 1; display: grid; gap: 22px; min-width: 0; }
+  .lateral > *, .palco-col > * { min-width: 0; }
+
+  @media (max-width: 880px) {
+    .painel-grade { grid-template-columns: minmax(0, 1fr); }
+    .lateral { grid-column: 1; grid-row: 2; }
+    .palco-col { grid-column: 1; grid-row: 1; }
+  }
+
+  .caixa {
+    background: var(--papel);
+    border-radius: 22px;
+    padding: 22px;
+  }
+
+  .caixa h2 { font-size: 20px; margin-bottom: 14px; }
+
+  .total {
+    font-family: var(--fonte-titulo);
+    font-size: 56px;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+
+  .total-rotulo {
+    color: var(--cinza);
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 14px;
+  }
+
+  .acoes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .btn {
+    height: 40px;
+    padding: 0 14px;
+    border: 2px solid var(--tinta);
+    border-radius: 12px;
+    background: #fff;
+    font-weight: 800;
+    font-size: 14px;
+    cursor: pointer;
+  }
+
+  .btn:hover { background: #f3f1e6; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .btn--cheio {
+    background: var(--tinta);
+    color: var(--amarelo);
+  }
+
+  .btn--cheio:hover { background: #2a2e6b; }
+
+  .busca {
+    width: 100%;
+    height: 44px;
+    padding: 0 14px;
+    border: 2px solid var(--tinta);
+    border-radius: 12px;
+    background: #fff;
+    margin-bottom: 12px;
+    font-size: 15px;
+  }
+
+  .lista {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-height: 360px;
+    overflow: auto;
+    border: 2px solid rgba(28, 31, 74, 0.15);
+    border-radius: 12px;
+    counter-reset: item;
+  }
+
+  .lista li {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    padding: 8px 12px;
+    font-size: 14px;
+    border-bottom: 1px solid rgba(28, 31, 74, 0.1);
+  }
+
+  .lista li:last-child { border-bottom: 0; }
+
+  .lista .num {
+    flex: 0 0 34px;
+    color: var(--cinza);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .lista .nome {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-weight: 700;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .lista .ig {
+    flex: 0 1 auto;
+    min-width: 0;
+    max-width: 45%;
+    color: var(--azul);
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .lista li.sorteado .nome,
+  .lista li.sorteado .ig {
+    text-decoration: line-through;
+    opacity: 0.55;
+  }
+
+  .lista-vazia {
+    padding: 16px;
+    color: var(--cinza);
+    font-size: 14px;
+    text-align: center;
+  }
+
+  .regra {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    font-weight: 700;
+    font-size: 14px;
+  }
+
+  .regra input[type="number"] {
+    width: 72px;
+    height: 40px;
+    padding: 0 10px;
+    border: 2px solid var(--tinta);
+    border-radius: 10px;
+    background: #fff;
+    font-weight: 700;
+  }
+
+  .regra input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    margin: 0;
+    accent-color: var(--tinta);
+  }
+
+  .nota {
+    color: var(--cinza);
+    font-size: 13px;
+    margin-top: 4px;
+  }
+
+  .palco {
+    position: relative;
+    background: var(--tinta);
+    border-radius: 22px;
+    padding: 28px 24px 30px;
+    color: #fff;
+    text-align: center;
+    overflow: hidden;
+  }
+
+  .palco-premio {
+    color: var(--amarelo);
+    font-weight: 800;
+    font-size: 15px;
+    margin-bottom: 18px;
+  }
+
+  .selo {
+    display: inline-block;
+    padding: 8px 18px;
+    border-radius: 999px;
+    font-family: var(--fonte-titulo);
+    font-size: 17px;
+    margin-bottom: 14px;
+    color: var(--tinta);
+  }
+
+  .selo--ganhador { background: var(--rosa); color: #fff; }
+  .selo--suplente { background: var(--amarelo); }
+
+  .janela {
+    background: var(--azul);
+    border: 6px solid var(--amarelo);
+    border-radius: 18px;
+    min-height: 190px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 18px;
+    margin-bottom: 22px;
+  }
+
+  .janela-nome {
+    font-family: var(--fonte-titulo);
+    font-size: clamp(30px, 6vw, 60px);
+    line-height: 1.05;
+    overflow-wrap: anywhere;
+  }
+
+  .janela-ig {
+    color: var(--amarelo);
+    font-weight: 800;
+    font-size: clamp(18px, 3vw, 26px);
+    margin-top: 10px;
+    overflow-wrap: anywhere;
+  }
+
+  .janela.pop { animation: pop 0.5s cubic-bezier(0.2, 1.4, 0.4, 1); }
+
+  @keyframes pop {
+    0% { transform: scale(0.94); }
+    55% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+  }
+
+  .btn-sortear {
+    height: 64px;
+    padding: 0 34px;
+    border: 0;
+    border-radius: 16px;
+    background: var(--amarelo);
+    color: var(--tinta);
+    font-family: var(--fonte-titulo);
+    font-size: 24px;
+    cursor: pointer;
+    box-shadow: 0 6px 0 #b8930a;
+    transition: transform 0.08s ease, box-shadow 0.08s ease;
+    max-width: 100%;
+  }
+
+  .btn-sortear:active:not(:disabled) {
+    transform: translateY(6px);
+    box-shadow: 0 0 0 #b8930a;
+  }
+
+  .btn-sortear:disabled { opacity: 0.55; cursor: not-allowed; }
+
+  .contagem {
+    position: absolute;
+    inset: 0;
+    background: rgba(12, 14, 40, 0.88);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 5;
+  }
+
+  .contagem span {
+    font-family: var(--fonte-titulo);
+    font-size: clamp(120px, 30vw, 220px);
+    color: var(--amarelo);
+    line-height: 1;
+  }
+
+  .contagem span.escala { animation: escala 0.8s ease-out; }
+
+  @keyframes escala {
+    0% { transform: scale(0.3); opacity: 0; }
+    30% { transform: scale(1.15); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  .confete {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 100;
+  }
+
+  .resultado {
+    list-style: none;
+    margin: 0 0 14px;
+    padding: 0;
+  }
+
+  .resultado li {
+    display: grid;
+    grid-template-columns: 36px minmax(0, 1fr) auto;
+    gap: 6px 10px;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(28, 31, 74, 0.1);
+    font-size: 14px;
+  }
+
+  .resultado .pos {
+    font-family: var(--fonte-titulo);
+    font-size: 20px;
+    color: var(--cinza);
+  }
+
+  .resultado .nome { font-weight: 800; font-size: 16px; }
+  .resultado .tipo { color: var(--cinza); font-weight: 600; }
+  .resultado .tipo strong { color: var(--tinta); }
+  .resultado .tipo.ganhador strong { color: var(--rosa); }
+  .resultado .hora { color: var(--cinza); font-variant-numeric: tabular-nums; }
+
+  .resultado-vazio {
+    color: var(--cinza);
+    font-size: 14px;
+    margin-bottom: 14px;
+  }
+
+  @media (max-width: 480px) {
+    .bilhete__topo { padding: 28px 22px 22px; }
+    .bilhete__corpo { padding: 24px 22px 26px; }
+    .caixa { padding: 18px; }
+    .palco { padding: 22px 16px 24px; }
+    .btn-sortear { font-size: 20px; padding: 0 22px; }
+    .resultado li { grid-template-columns: 30px minmax(0, 1fr); }
+    .resultado .hora { grid-column: 2; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .janela.pop, .contagem span.escala { animation: none; }
+    .botao, .btn-sortear { transition: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ================= PÁGINA DE CADASTRO ================= -->
+<main id="tela-cadastro" class="pagina-cadastro" hidden>
+  <article class="bilhete" aria-labelledby="titulo-premio">
+    <div class="bilhete__topo">
+      <p class="bilhete__organizador" id="organizador"></p>
+      <h1 class="bilhete__premio" id="titulo-premio"></h1>
+      <p class="bilhete__descricao" id="descricao"></p>
+    </div>
+    <div class="picote" aria-hidden="true"></div>
+    <div class="bilhete__corpo">
+      <form id="form-cadastro" novalidate>
+        <div class="erro" id="erro-cadastro" role="alert" hidden></div>
+        <div class="campo">
+          <label for="nome">Seu nome completo</label>
+          <input id="nome" name="nome" type="text" autocomplete="name" maxlength="80" placeholder="Maria da Silva">
+        </div>
+        <div class="campo" id="campo-instagram">
+          <label for="instagram">Seu @ do Instagram</label>
+          <div class="campo-ig">
+            <span class="arroba" aria-hidden="true">@</span>
+            <input id="instagram" name="instagram" type="text" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="31" placeholder="seuperfil">
+          </div>
+        </div>
+        <label class="aceite">
+          <input id="aceite" name="aceite" type="checkbox">
+          <span id="texto-aceite"></span>
+        </label>
+        <button class="botao" id="btn-participar" type="submit">Quero participar</button>
+        <p class="bilhete__encerra" id="encerra"></p>
+      </form>
+      <div class="sucesso" id="sucesso" hidden>
+        <p class="sucesso__rotulo">Seu número da sorte</p>
+        <p class="sucesso__numero" id="sucesso-numero">0000</p>
+        <h2 class="sucesso__titulo">Você está no sorteio</h2>
+        <p class="sucesso__texto" id="sucesso-texto"></p>
+      </div>
+    </div>
+  </article>
+</main>
+
+<!-- ================= PAINEL ================= -->
+<div id="tela-painel" hidden>
+  <div class="login-wrap" id="tela-login">
+    <form class="login" id="form-login" novalidate>
+      <h1>Painel do sorteio</h1>
+      <p>Digite a senha do painel para entrar.</p>
+      <div class="erro" id="erro-login" role="alert" hidden></div>
+      <div class="campo">
+        <label for="senha">Senha</label>
+        <input id="senha" name="senha" type="password" autocomplete="current-password">
+      </div>
+      <button class="botao" id="btn-entrar" type="submit">Entrar</button>
+    </form>
+  </div>
+
+  <div class="painel" id="painel" hidden>
+    <header class="painel-cab">
+      <h1>Painel do sorteio</h1>
+      <p id="painel-premio"></p>
+    </header>
+
+    <div class="painel-grade">
+      <div class="palco-col">
+        <section class="palco" aria-label="Palco do sorteio">
+          <p class="palco-premio">Prêmio: <span id="palco-premio"></span></p>
+          <div>
+            <div class="selo" id="selo" hidden></div>
+          </div>
+          <div class="janela" id="janela" aria-live="polite">
+            <div class="janela-nome" id="janela-nome">Pronto para sortear</div>
+            <div class="janela-ig" id="janela-ig"></div>
+          </div>
+          <button class="btn-sortear" id="btn-sortear" type="button">Sortear ganhador</button>
+          <div class="contagem" id="contagem" hidden aria-hidden="true"><span id="contagem-num"></span></div>
+        </section>
+
+        <section class="caixa" aria-labelledby="titulo-resultado">
+          <h2 id="titulo-resultado">Resultado</h2>
+          <p class="resultado-vazio" id="resultado-vazio">Nenhum sorteio feito ainda.</p>
+          <ol class="resultado" id="resultado" hidden></ol>
+          <div class="acoes">
+            <button class="btn" id="btn-baixar-resultado" type="button">Baixar resultado</button>
+            <button class="btn" id="btn-recomecar" type="button">Recomeçar</button>
+          </div>
+        </section>
+      </div>
+
+      <aside class="lateral">
+        <section class="caixa" aria-labelledby="titulo-participantes">
+          <h2 id="titulo-participantes">Participantes</h2>
+          <p class="total" id="total">0</p>
+          <p class="total-rotulo" id="total-rotulo">cadastrados</p>
+          <div class="acoes">
+            <button class="btn btn--cheio" id="btn-atualizar" type="button">Atualizar lista</button>
+            <button class="btn" id="btn-csv" type="button">Baixar CSV</button>
+            <button class="btn" id="btn-gerar-teste" type="button" hidden>Gerar 40 de teste</button>
+          </div>
+          <label for="busca" class="visualmente-oculto">Buscar por nome ou @</label>
+          <input class="busca" id="busca" type="search" placeholder="Buscar por nome ou @">
+          <ol class="lista" id="lista"></ol>
+        </section>
+
+        <section class="caixa" aria-labelledby="titulo-regras">
+          <h2 id="titulo-regras">Regras do sorteio</h2>
+          <div class="regra">
+            <label for="qtd-ganhadores">Número de ganhadores</label>
+            <input id="qtd-ganhadores" type="number" min="1" max="99" step="1" value="1">
+          </div>
+          <label class="regra">
+            <input id="uma-chance" type="checkbox" checked>
+            <span>Uma chance por @</span>
+          </label>
+          <label class="regra">
+            <input id="contagem-ativa" type="checkbox" checked>
+            <span>Contagem 3, 2, 1</span>
+          </label>
+          <p class="nota">Quem já foi sorteado sai da roleta. Depois dos ganhadores, os próximos sorteios viram suplentes.</p>
+        </section>
+      </aside>
+    </div>
+  </div>
+</div>
+
+<div class="aviso-teste" id="aviso-teste" hidden>Modo teste: cadastros ficam só neste navegador</div>
+
+<script>
+const CONFIG = {
+  API_URL: "",                 // URL /exec do Apps Script. Vazio = modo teste
+  ORGANIZADOR: "Sorteio oficial @seuperfil",
+  PREMIO: "iPhone 16 128GB",
+  DESCRICAO: "Cadastre seu nome e seu @ do Instagram para concorrer. O resultado sai ao vivo no nosso perfil.",
+  ENCERRA_EM: "Inscrições até 30/09/2026 às 20h",
+  TEXTO_ACEITE: "Li e aceito as regras do sorteio.",
+  LINK_REGRAS: "",             // opcional, transforma o texto de aceite em link
+  PEDIR_INSTAGRAM: true,
+  INSTAGRAM_OBRIGATORIO: true,
+  INSCRICOES_ABERTAS: true     // false desativa o botão com "Inscrições encerradas"
+};
+
+(function () {
+  "use strict";
+
+  /* ---------- Utilidades ---------- */
+  const MODO_TESTE = !CONFIG.API_URL;
+  const CHAVE_TESTE = "sorteio_teste_participantes";
+  const CHAVE_RESULTADO = "sorteio_resultado";
+  const CHAVE_INSCRICAO = "sorteio_inscricao";
+  const REDUZ_MOVIMENTO = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  const $ = (id) => document.getElementById(id);
+
+  function lerStorage(chave) {
+    try {
+      const bruto = localStorage.getItem(chave);
+      return bruto ? JSON.parse(bruto) : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function gravarStorage(chave, valor) {
+    try {
+      localStorage.setItem(chave, JSON.stringify(valor));
+    } catch (e) { /* armazenamento indisponível */ }
+  }
+
+  function apagarStorage(chave) {
+    try {
+      localStorage.removeItem(chave);
+    } catch (e) { /* armazenamento indisponível */ }
+  }
+
+  function esperar(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  // Inteiro aleatório em [0, n) com crypto.getRandomValues e rejeição de viés.
+  function inteiroAleatorio(n) {
+    if (n <= 0) throw new Error("Intervalo inválido");
+    if (n === 1) return 0;
+    const buffer = new Uint32Array(1);
+    const limite = Math.floor(0x100000000 / n) * n;
+    let valor;
+    do {
+      crypto.getRandomValues(buffer);
+      valor = buffer[0];
+    } while (valor >= limite);
+    return valor % n;
+  }
+
+  function normalizarInstagram(texto) {
+    return String(texto || "").trim().replace(/^@+/, "").replace(/\s+/g, "").toLowerCase();
+  }
+
+  function normalizarNome(texto) {
+    return String(texto || "").replace(/\s+/g, " ").trim().slice(0, 80);
+  }
+
+  function formatarNumero(n) {
+    return String(Math.max(0, parseInt(n, 10) || 0)).padStart(4, "0");
+  }
+
+  function formatarHora(iso) {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return "";
+    return d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  }
+
+  function formatarDataHora(iso) {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return String(iso || "");
+    return d.toLocaleString("pt-BR");
+  }
+
+  function mostrarErro(el, mensagem) {
+    el.textContent = mensagem;
+    el.hidden = false;
+  }
+
+  function limparErro(el) {
+    el.textContent = "";
+    el.hidden = true;
+  }
+
+  function limparFilhos(el) {
+    while (el.firstChild) el.removeChild(el.firstChild);
+  }
+
+  function criar(tag, classe, texto) {
+    const el = document.createElement(tag);
+    if (classe) el.className = classe;
+    if (texto !== undefined) el.textContent = texto;
+    return el;
+  }
+
+  function gerarCsv(linhas) {
+    const escapar = (v) => '"' + String(v === null || v === undefined ? "" : v).replace(/"/g, '""') + '"';
+    return "﻿" + linhas.map((linha) => linha.map(escapar).join(";")).join("\r\n");
+  }
+
+  function baixarArquivo(nome, conteudo) {
+    const blob = new Blob([conteudo], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = nome;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  /* ---------- API (Apps Script ou modo teste) ---------- */
+  const api = {
+    async cadastrar(nome, instagram) {
+      if (MODO_TESTE) {
+        const lista = lerStorage(CHAVE_TESTE) || [];
+        if (!CONFIG.INSCRICOES_ABERTAS) return { ok: false, erro: "fechado" };
+        if (instagram && lista.some((p) => normalizarInstagram(p.instagram) === instagram)) {
+          return { ok: false, erro: "duplicado" };
+        }
+        lista.push({ data: new Date().toISOString(), nome, instagram: instagram ? "@" + instagram : "" });
+        gravarStorage(CHAVE_TESTE, lista);
+        return { ok: true, numero: lista.length };
+      }
+      const resposta = await fetch(CONFIG.API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ nome, instagram })
+      });
+      return resposta.json();
+    },
+
+    async listar(senha) {
+      if (MODO_TESTE) {
+        return { ok: true, participantes: lerStorage(CHAVE_TESTE) || [] };
+      }
+      const url = CONFIG.API_URL + "?acao=listar&senha=" + encodeURIComponent(senha) + "&_=" + Date.now();
+      const resposta = await fetch(url, { method: "GET" });
+      return resposta.json();
+    }
+  };
+
+  /* ---------- Página de cadastro ---------- */
+  function iniciarCadastro() {
+    $("tela-cadastro").hidden = false;
+    $("organizador").textContent = CONFIG.ORGANIZADOR;
+    $("titulo-premio").textContent = CONFIG.PREMIO;
+    $("descricao").textContent = CONFIG.DESCRICAO;
+    $("encerra").textContent = CONFIG.ENCERRA_EM;
+    document.title = CONFIG.PREMIO + " | Sorteio";
+
+    const textoAceite = $("texto-aceite");
+    if (CONFIG.LINK_REGRAS) {
+      const link = criar("a", "", CONFIG.TEXTO_ACEITE);
+      link.href = CONFIG.LINK_REGRAS;
+      link.target = "_blank";
+      link.rel = "noopener";
+      textoAceite.appendChild(link);
+    } else {
+      textoAceite.textContent = CONFIG.TEXTO_ACEITE;
+    }
+
+    if (!CONFIG.PEDIR_INSTAGRAM) $("campo-instagram").hidden = true;
+
+    const form = $("form-cadastro");
+    const erro = $("erro-cadastro");
+    const botao = $("btn-participar");
+    const inputNome = $("nome");
+    const inputIg = $("instagram");
+    const inputAceite = $("aceite");
+
+    if (!CONFIG.INSCRICOES_ABERTAS) {
+      botao.disabled = true;
+      botao.textContent = "Inscrições encerradas";
+    }
+
+    function mostrarSucesso(nome, numero) {
+      form.hidden = true;
+      const sucesso = $("sucesso");
+      $("sucesso-numero").textContent = formatarNumero(numero);
+      const primeiroNome = String(nome || "").trim().split(" ")[0] || "Você";
+      $("sucesso-texto").textContent = primeiroNome + ", boa sorte! Acompanhe o resultado ao vivo no Instagram.";
+      sucesso.hidden = false;
+    }
+
+    const inscricao = lerStorage(CHAVE_INSCRICAO);
+    if (inscricao && inscricao.numero) {
+      mostrarSucesso(inscricao.nome, inscricao.numero);
+      return;
+    }
+
+    form.addEventListener("submit", async (evento) => {
+      evento.preventDefault();
+      limparErro(erro);
+
+      const nome = normalizarNome(inputNome.value);
+      const partes = nome.split(" ").filter(Boolean);
+      if (nome.length < 3 || partes.length < 2) {
+        mostrarErro(erro, "Digite seu nome e sobrenome.");
+        inputNome.focus();
+        return;
+      }
+
+      let instagram = "";
+      if (CONFIG.PEDIR_INSTAGRAM) {
+        instagram = normalizarInstagram(inputIg.value);
+        if (!instagram && CONFIG.INSTAGRAM_OBRIGATORIO) {
+          mostrarErro(erro, "Digite seu @ do Instagram.");
+          inputIg.focus();
+          return;
+        }
+        if (instagram && !/^[a-z0-9._]{1,30}$/.test(instagram)) {
+          mostrarErro(erro, "Esse @ não parece válido. Use só letras, números, ponto e underline.");
+          inputIg.focus();
+          return;
+        }
+      }
+
+      if (!inputAceite.checked) {
+        mostrarErro(erro, "Marque que você aceita as regras para participar.");
+        inputAceite.focus();
+        return;
+      }
+
+      botao.disabled = true;
+      const rotuloOriginal = botao.textContent;
+      botao.textContent = "Enviando...";
+
+      let resposta;
+      try {
+        resposta = await api.cadastrar(nome, instagram);
+      } catch (e) {
+        resposta = { ok: false, erro: "rede" };
+      }
+
+      botao.disabled = false;
+      botao.textContent = rotuloOriginal;
+
+      if (resposta && resposta.ok) {
+        gravarStorage(CHAVE_INSCRICAO, { nome, numero: resposta.numero });
+        mostrarSucesso(nome, resposta.numero);
+        return;
+      }
+
+      const codigo = resposta && resposta.erro;
+      const mensagens = {
+        duplicado: "Esse @ já está cadastrado no sorteio.",
+        fechado: "As inscrições já foram encerradas.",
+        nome: "Digite seu nome e sobrenome.",
+        instagram: "Esse @ não parece válido. Use só letras, números, ponto e underline.",
+        rede: "Sem conexão com o servidor. Tente de novo em instantes."
+      };
+      mostrarErro(erro, mensagens[codigo] || "Não foi possível concluir o cadastro. Tente de novo em instantes.");
+      if (codigo === "fechado") {
+        botao.disabled = true;
+        botao.textContent = "Inscrições encerradas";
+      }
+    });
+  }
+
+  /* ---------- Painel ---------- */
+  function iniciarPainel() {
+    $("tela-painel").hidden = false;
+    document.title = "Painel do sorteio | " + CONFIG.PREMIO;
+    $("painel-premio").textContent = CONFIG.PREMIO;
+    $("palco-premio").textContent = CONFIG.PREMIO;
+
+    let senhaAtual = "";
+    let participantes = [];
+    let resultado = lerStorage(CHAVE_RESULTADO) || [];
+    if (!Array.isArray(resultado)) resultado = [];
+    let sorteando = false;
+
+    const formLogin = $("form-login");
+    const erroLogin = $("erro-login");
+    const btnEntrar = $("btn-entrar");
+    const lista = $("lista");
+    const busca = $("busca");
+    const janela = $("janela");
+    const janelaNome = $("janela-nome");
+    const janelaIg = $("janela-ig");
+    const selo = $("selo");
+    const btnSortear = $("btn-sortear");
+    const contagem = $("contagem");
+    const contagemNum = $("contagem-num");
+    const listaResultado = $("resultado");
+    const resultadoVazio = $("resultado-vazio");
+    const inputQtd = $("qtd-ganhadores");
+    const inputUmaChance = $("uma-chance");
+    const inputContagem = $("contagem-ativa");
+
+    if (MODO_TESTE) $("btn-gerar-teste").hidden = false;
+
+    function chaveParticipante(p) {
+      const ig = normalizarInstagram(p.instagram);
+      return ig ? "ig:" + ig : "nome:" + normalizarNome(p.nome).toLowerCase();
+    }
+
+    function chavesSorteadas() {
+      return new Set(resultado.map(chaveParticipante));
+    }
+
+    function quantidadeGanhadores() {
+      const n = parseInt(inputQtd.value, 10);
+      return isNaN(n) || n < 1 ? 1 : Math.min(n, 99);
+    }
+
+    function elegiveis() {
+      const sorteados = chavesSorteadas();
+      const vistos = new Set();
+      const umaChance = inputUmaChance.checked;
+      return participantes.filter((p) => {
+        const chave = chaveParticipante(p);
+        if (sorteados.has(chave)) return false;
+        if (umaChance) {
+          if (vistos.has(chave)) return false;
+          vistos.add(chave);
+        }
+        return true;
+      });
+    }
+
+    function tipoDoIndice(i) {
+      return i < quantidadeGanhadores() ? "Ganhador" : "Suplente";
+    }
+
+    function atualizarBotaoSortear() {
+      const proximo = resultado.length;
+      const qtd = quantidadeGanhadores();
+      let rotulo;
+      if (proximo < qtd) {
+        rotulo = qtd === 1 ? "Sortear ganhador" : "Sortear ganhador " + (proximo + 1);
+      } else {
+        rotulo = "Sortear suplente " + (proximo - qtd + 1);
+      }
+      btnSortear.textContent = rotulo;
+      btnSortear.disabled = sorteando || elegiveis().length === 0;
+    }
+
+    function renderizarLista() {
+      limparFilhos(lista);
+      const termo = busca.value.trim().toLowerCase();
+      const sorteados = chavesSorteadas();
+      let exibidos = 0;
+      participantes.forEach((p, i) => {
+        const nome = String(p.nome || "");
+        const ig = String(p.instagram || "");
+        if (termo && !nome.toLowerCase().includes(termo) && !ig.toLowerCase().includes(termo)) return;
+        exibidos++;
+        const li = criar("li");
+        if (sorteados.has(chaveParticipante(p))) li.classList.add("sorteado");
+        li.appendChild(criar("span", "num", String(i + 1)));
+        li.appendChild(criar("span", "nome", nome));
+        li.appendChild(criar("span", "ig", ig));
+        lista.appendChild(li);
+      });
+      if (exibidos === 0) {
+        const vazio = criar("li", "lista-vazia", participantes.length === 0 ? "Nenhum participante ainda." : "Nenhum resultado para a busca.");
+        lista.appendChild(vazio);
+      }
+      $("total").textContent = String(participantes.length);
+      $("total-rotulo").textContent = participantes.length === 1 ? "cadastrado" : "cadastrados";
+      atualizarBotaoSortear();
+    }
+
+    function renderizarResultado() {
+      limparFilhos(listaResultado);
+      if (resultado.length === 0) {
+        resultadoVazio.hidden = false;
+        listaResultado.hidden = true;
+      } else {
+        resultadoVazio.hidden = true;
+        listaResultado.hidden = false;
+        resultado.forEach((r, i) => {
+          const li = criar("li");
+          li.appendChild(criar("span", "pos", String(i + 1) + "º"));
+          const bloco = criar("div");
+          bloco.appendChild(criar("div", "nome", r.nome));
+          const tipo = r.tipo || tipoDoIndice(i);
+          const linhaTipo = criar("div", "tipo " + (tipo === "Ganhador" ? "ganhador" : "suplente"));
+          linhaTipo.appendChild(criar("strong", "", tipo));
+          if (r.instagram) linhaTipo.appendChild(document.createTextNode(" " + r.instagram));
+          bloco.appendChild(linhaTipo);
+          li.appendChild(bloco);
+          li.appendChild(criar("span", "hora", formatarHora(r.hora)));
+          listaResultado.appendChild(li);
+        });
+      }
+      $("btn-baixar-resultado").disabled = resultado.length === 0;
+      $("btn-recomecar").disabled = resultado.length === 0;
+      atualizarBotaoSortear();
+    }
+
+    function mostrarSelo(tipo, indice) {
+      selo.className = "selo " + (tipo === "Ganhador" ? "selo--ganhador" : "selo--suplente");
+      if (tipo === "Ganhador") {
+        selo.textContent = quantidadeGanhadores() > 1 ? "Ganhador " + (indice + 1) : "Temos um ganhador";
+      } else {
+        selo.textContent = "Suplente " + (indice - quantidadeGanhadores() + 1);
+      }
+      selo.hidden = false;
+    }
+
+    async function carregarLista(mostrarErroEm) {
+      let resposta;
+      try {
+        resposta = await api.listar(senhaAtual);
+      } catch (e) {
+        resposta = { ok: false, erro: "rede" };
+      }
+      if (!resposta || !resposta.ok) {
+        if (mostrarErroEm) {
+          mostrarErro(mostrarErroEm, resposta && resposta.erro === "senha"
+            ? "Senha incorreta."
+            : "Não foi possível carregar a lista. Confira a URL do Apps Script.");
+        } else {
+          alert(resposta && resposta.erro === "senha"
+            ? "Senha incorreta."
+            : "Não foi possível carregar a lista. Confira a URL do Apps Script.");
+        }
+        return false;
+      }
+      participantes = Array.isArray(resposta.participantes) ? resposta.participantes.map((p) => ({
+        data: p.data || "",
+        nome: normalizarNome(p.nome),
+        instagram: String(p.instagram || "").trim()
+      })) : [];
+      renderizarLista();
+      return true;
+    }
+
+    formLogin.addEventListener("submit", async (evento) => {
+      evento.preventDefault();
+      limparErro(erroLogin);
+      senhaAtual = $("senha").value;
+      btnEntrar.disabled = true;
+      btnEntrar.textContent = "Entrando...";
+      const ok = await carregarLista(erroLogin);
+      btnEntrar.disabled = false;
+      btnEntrar.textContent = "Entrar";
+      if (ok) {
+        $("tela-login").hidden = true;
+        $("painel").hidden = false;
+        renderizarResultado();
+      }
+    });
+
+    $("btn-atualizar").addEventListener("click", async () => {
+      const btn = $("btn-atualizar");
+      btn.disabled = true;
+      btn.textContent = "Atualizando...";
+      await carregarLista(null);
+      btn.disabled = false;
+      btn.textContent = "Atualizar lista";
+    });
+
+    $("btn-csv").addEventListener("click", () => {
+      const linhas = [["Data", "Nome", "Instagram"]];
+      participantes.forEach((p) => linhas.push([formatarDataHora(p.data), p.nome, p.instagram]));
+      baixarArquivo("participantes.csv", gerarCsv(linhas));
+    });
+
+    $("btn-gerar-teste").addEventListener("click", () => {
+      const lista40 = gerarParticipantesTeste(40, lerStorage(CHAVE_TESTE) || []);
+      gravarStorage(CHAVE_TESTE, lista40);
+      carregarLista(null);
+    });
+
+    busca.addEventListener("input", renderizarLista);
+    inputQtd.addEventListener("input", () => { renderizarResultado(); });
+    inputUmaChance.addEventListener("change", atualizarBotaoSortear);
+
+    $("btn-baixar-resultado").addEventListener("click", () => {
+      const linhas = [["Posição", "Tipo", "Nome", "Instagram", "Hora"]];
+      resultado.forEach((r, i) => linhas.push([i + 1, r.tipo || tipoDoIndice(i), r.nome, r.instagram, formatarDataHora(r.hora)]));
+      baixarArquivo("resultado-sorteio.csv", gerarCsv(linhas));
+    });
+
+    $("btn-recomecar").addEventListener("click", () => {
+      if (!confirm("Apagar o resultado e recomeçar o sorteio?")) return;
+      resultado = [];
+      apagarStorage(CHAVE_RESULTADO);
+      selo.hidden = true;
+      janelaNome.textContent = "Pronto para sortear";
+      janelaIg.textContent = "";
+      renderizarResultado();
+      renderizarLista();
+    });
+
+    async function contagemRegressiva() {
+      contagem.hidden = false;
+      for (const n of ["3", "2", "1"]) {
+        contagemNum.classList.remove("escala");
+        contagemNum.textContent = n;
+        if (!REDUZ_MOVIMENTO) {
+          void contagemNum.offsetWidth;
+          contagemNum.classList.add("escala");
+        }
+        await esperar(800);
+      }
+      contagemNum.classList.remove("escala");
+      contagem.hidden = true;
+    }
+
+    async function roleta(lista, vencedor) {
+      const passos = REDUZ_MOVIMENTO ? 6 : 42;
+      for (let t = 0; t < passos; t++) {
+        const candidato = lista[inteiroAleatorio(lista.length)];
+        janelaNome.textContent = candidato.nome;
+        janelaIg.textContent = candidato.instagram;
+        const fracao = t / (passos - 1);
+        await esperar(35 + fracao * fracao * fracao * 420);
+      }
+      janelaNome.textContent = vencedor.nome;
+      janelaIg.textContent = vencedor.instagram;
+    }
+
+    btnSortear.addEventListener("click", async () => {
+      if (sorteando) return;
+      const lista = elegiveis();
+      if (lista.length === 0) return;
+
+      sorteando = true;
+      selo.hidden = true;
+      janela.classList.remove("pop");
+      atualizarBotaoSortear();
+
+      // O vencedor é escolhido antes da animação.
+      const vencedor = lista[inteiroAleatorio(lista.length)];
+      const indice = resultado.length;
+      const tipo = tipoDoIndice(indice);
+
+      try {
+        if (inputContagem.checked) await contagemRegressiva();
+        await roleta(lista, vencedor);
+      } finally {
+        contagem.hidden = true;
+      }
+
+      mostrarSelo(tipo, indice);
+      if (!REDUZ_MOVIMENTO) {
+        void janela.offsetWidth;
+        janela.classList.add("pop");
+        if (tipo === "Ganhador") soltarConfete();
+      }
+
+      resultado.push({ nome: vencedor.nome, instagram: vencedor.instagram, hora: new Date().toISOString(), tipo });
+      gravarStorage(CHAVE_RESULTADO, resultado);
+
+      sorteando = false;
+      renderizarResultado();
+      renderizarLista();
+    });
+
+    renderizarResultado();
+  }
+
+  /* ---------- Confete ---------- */
+  function soltarConfete() {
+    const canvas = criar("canvas", "confete");
+    canvas.setAttribute("aria-hidden", "true");
+    document.body.appendChild(canvas);
+    const ctx = canvas.getContext("2d");
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+    function redimensionar() {
+      canvas.width = Math.floor(window.innerWidth * dpr);
+      canvas.height = Math.floor(window.innerHeight * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    redimensionar();
+    window.addEventListener("resize", redimensionar);
+
+    const cores = ["#FFD447", "#FF5C8A", "#2438E0", "#FFFDF5", "#16228F", "#7ED957"];
+    const pecas = [];
+    const largura = window.innerWidth;
+    for (let i = 0; i < 180; i++) {
+      pecas.push({
+        x: Math.random() * largura,
+        y: -20 - Math.random() * window.innerHeight * 0.5,
+        vx: (Math.random() - 0.5) * 3,
+        vy: 2 + Math.random() * 4,
+        w: 6 + Math.random() * 8,
+        h: 8 + Math.random() * 10,
+        rot: Math.random() * Math.PI * 2,
+        vr: (Math.random() - 0.5) * 0.25,
+        cor: cores[Math.floor(Math.random() * cores.length)]
+      });
+    }
+
+    const inicio = performance.now();
+    const duracao = 4000;
+
+    function quadro(agora) {
+      const decorrido = agora - inicio;
+      ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+      const alpha = decorrido > duracao - 600 ? Math.max(0, (duracao - decorrido) / 600) : 1;
+      ctx.globalAlpha = alpha;
+      for (const p of pecas) {
+        p.vy += 0.08;
+        p.x += p.vx;
+        p.y += p.vy;
+        p.rot += p.vr;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+        ctx.fillStyle = p.cor;
+        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+        ctx.restore();
+      }
+      if (decorrido < duracao) {
+        requestAnimationFrame(quadro);
+      } else {
+        window.removeEventListener("resize", redimensionar);
+        canvas.remove();
+      }
+    }
+    requestAnimationFrame(quadro);
+  }
+
+  /* ---------- Dados de teste ---------- */
+  function gerarParticipantesTeste(quantidade, existentes) {
+    const nomes = ["Ana", "Bruno", "Carla", "Diego", "Eduarda", "Felipe", "Gabriela", "Henrique", "Isabela", "João",
+      "Karina", "Lucas", "Mariana", "Nicolas", "Olívia", "Pedro", "Rafaela", "Samuel", "Tainá", "Vinícius",
+      "Yasmin", "Thiago", "Larissa", "Matheus", "Camila", "Gustavo", "Beatriz", "Rodrigo", "Juliana", "Leonardo"];
+    const sobrenomes = ["Silva", "Santos", "Oliveira", "Souza", "Pereira", "Costa", "Rodrigues", "Almeida", "Nascimento", "Lima",
+      "Araújo", "Fernandes", "Carvalho", "Gomes", "Martins", "Ribeiro", "Barbosa", "Rocha", "Dias", "Moreira"];
+    const slug = (s) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    const usados = new Set(existentes.map((p) => normalizarInstagram(p.instagram)));
+    const lista = existentes.slice();
+    for (let i = 0; i < quantidade; i++) {
+      const nome = nomes[i % nomes.length];
+      const sobrenome = sobrenomes[(i * 7 + Math.floor(i / nomes.length)) % sobrenomes.length];
+      let base = slug(nome) + "." + slug(sobrenome);
+      let handle = base;
+      let contador = 1;
+      while (usados.has(handle)) {
+        contador++;
+        handle = base + contador;
+      }
+      usados.add(handle);
+      lista.push({
+        data: new Date(Date.now() - (quantidade - i) * 60000).toISOString(),
+        nome: nome + " " + sobrenome,
+        instagram: "@" + handle
+      });
+    }
+    return lista;
+  }
+
+  /* ---------- Inicialização ---------- */
+  const params = new URLSearchParams(window.location.search);
+  if (MODO_TESTE) $("aviso-teste").hidden = false;
+  if (params.has("painel")) {
+    iniciarPainel();
+  } else {
+    iniciarCadastro();
+  }
+})();
+</script>
+</body>
+</html>
