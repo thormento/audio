@@ -1473,7 +1473,7 @@ const CONFIG = {
   /* ---------- Inicialização ---------- */
   const params = new URLSearchParams(window.location.search);
   if (MODO_TESTE) $("aviso-teste").hidden = false;
-  if (params.has("painel")) {
+  if (params.has("painel") || window.location.hash === "#painel") {
     iniciarPainel();
   } else {
     iniciarCadastro();

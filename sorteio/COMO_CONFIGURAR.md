@@ -77,7 +77,7 @@ Escolha uma das opções:
 Os links ficam assim:
 
 - Cadastro (divulgue este): `https://seusite.com/sorteio.html`
-- Painel (só para você): `https://seusite.com/sorteio.html?painel`
+- Painel (só para você): `https://seusite.com/sorteio.html?painel` (também funciona com `#painel` no final)
 
 Ninguém consegue entrar no painel sem a senha, e a senha não está no HTML. Ainda assim, não divulgue o link do painel.
 
