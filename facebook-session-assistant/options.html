@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Opções · Facebook Session Assistant</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <header class="page-header">
+    <img src="icons/icon48.png" alt="" width="40" height="40">
+    <div>
+      <h1 id="app-name">Facebook Session Assistant</h1>
+      <p class="muted">Opções, perfis e histórico. Tudo fica salvo apenas neste navegador.</p>
+    </div>
+  </header>
+
+  <main>
+    <section class="card">
+      <h2>Perfis de configuração</h2>
+      <p class="muted">Cada perfil guarda seus próprios intervalos. O painel usa o perfil ativo.</p>
+      <div class="row">
+        <label for="profile-select">Perfil ativo</label>
+        <select id="profile-select"></select>
+      </div>
+      <div class="row">
+        <label for="profile-name">Nome do perfil</label>
+        <input type="text" id="profile-name" maxlength="40">
+        <button type="button" class="btn btn-secondary" id="btn-rename">Renomear</button>
+      </div>
+      <div class="row">
+        <button type="button" class="btn btn-ghost" id="btn-reset-profile">Restaurar padrões deste perfil</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Preferências</h2>
+      <label class="check-row">
+        <input type="checkbox" id="pref-notifications">
+        <span>Exibir notificações do Chrome ao concluir etapas e sessões</span>
+      </label>
+      <label class="check-row">
+        <input type="checkbox" id="pref-overlay">
+        <span>Mostrar widget flutuante com cronômetro nas páginas do Facebook</span>
+      </label>
+      <label class="check-row">
+        <input type="checkbox" id="pref-logs">
+        <span>Registrar logs de desenvolvimento no console</span>
+      </label>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <h2>Histórico</h2>
+        <button type="button" class="btn btn-ghost" id="btn-clear-history">Limpar histórico</button>
+      </div>
+      <p class="muted">Últimas <span id="history-limit">30</span> sessões.</p>
+      <div class="table-wrap">
+        <table id="history-table">
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Início</th>
+              <th>Fim</th>
+              <th>Duração</th>
+              <th>Feed</th>
+              <th>Reels</th>
+              <th>Vídeos</th>
+              <th>Lives</th>
+              <th>Jogos</th>
+              <th>Curtidas</th>
+              <th>Solicitações</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <p class="empty" id="history-empty" hidden>Nenhuma sessão registrada ainda.</p>
+    </section>
+
+    <section class="card">
+      <h2>Privacidade e segurança</h2>
+      <ul class="plain">
+        <li>A extensão não coleta senha, cookies, tokens, mensagens ou dados pessoais.</li>
+        <li>Nenhum dado é enviado para servidores externos; tudo fica em <code>chrome.storage.local</code>.</li>
+        <li>Curtidas, solicitações de amizade, comentários e mensagens nunca são automatizados. Você executa e apenas registra.</li>
+      </ul>
+    </section>
+
+    <section class="card danger-zone">
+      <h2>Restaurar tudo</h2>
+      <p class="muted">Apaga perfis, preferências, sessão atual e histórico, recriando os padrões.</p>
+      <button type="button" class="btn btn-danger" id="btn-reset-all">Apagar todos os dados</button>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" hidden></div>
+  <script type="module" src="options.js"></script>
+</body>
+</html>

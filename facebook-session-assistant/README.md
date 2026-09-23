@@ -1,0 +1,163 @@
+# Facebook Session Assistant
+
+Extensão para Google Chrome (Manifest V3) que organiza e executa **sessões de navegação no Facebook**: você define intervalos mínimos e máximos para cada atividade, a extensão sorteia os valores a cada nova sessão, abre a seção correspondente, controla os cronômetros, as pausas e as metas assistidas, e salva um histórico local.
+
+> A extensão **não** curte, **não** envia solicitações de amizade, **não** comenta, **não** compartilha e **não** envia mensagens. Essas ações permanecem manuais: você as executa no Facebook e apenas registra no contador. Nenhum dado sai do seu navegador.
+
+---
+
+## Instalação
+
+1. Baixe a extensão (esta pasta `facebook-session-assistant/`).
+2. Extraia os arquivos, se estiverem compactados.
+3. Abra o Chrome.
+4. Digite na barra de endereços: `chrome://extensions`
+5. Ative **Modo do desenvolvedor** (canto superior direito).
+6. Clique em **Carregar sem compactação**.
+7. Escolha a pasta `facebook-session-assistant`.
+8. Fixe o ícone da extensão na barra (ícone de quebra-cabeça → alfinete).
+
+A extensão usa a conta do Facebook que já estiver autenticada no navegador. Não há servidor externo nem dependências.
+
+---
+
+## Como usar
+
+1. **Abra o painel** clicando no ícone da extensão.
+2. **Configure cada atividade**: ative/desative, informe tempo mínimo e máximo (minutos). Para as metas (Curtidas, Amigos) informe quantidade mínima e máxima.
+3. Ajuste as opções de sessão: **Embaralhar atividades** e **Pausa entre atividades** (segundos).
+4. Clique em **Salvar configurações**.
+5. Clique em **Gerar nova sessão**. A extensão sorteia:
+   - a duração de cada atividade;
+   - a quantidade de cada meta;
+   - a pausa entre cada etapa;
+   - a ordem das etapas (se o embaralhamento estiver ativo).
+6. Revise os valores sorteados e clique em **Iniciar sessão**.
+7. A extensão abre a seção correspondente do Facebook e inicia o cronômetro. O popup pode ser fechado: a sessão continua no service worker.
+8. Use **Pausar / Continuar / Pular etapa / Finalizar** quando quiser.
+9. Ao curtir ou enviar uma solicitação manualmente, clique em **+ Registrar curtida** / **+ Registrar solicitação** (no popup ou no widget flutuante na página).
+10. Ao terminar, a extensão mostra o **resumo** e grava a sessão no **histórico** (últimos 30 registros).
+
+### Atividades
+
+| Atividade | URL aberta | Observação |
+|-----------|-----------|------------|
+| Feed | `https://www.facebook.com/` | Rolagem automática opcional, com pausas variáveis. Para se você interagir com a página. |
+| Reels | `https://www.facebook.com/reel/` | Cronômetro regressivo. |
+| Vídeos | `https://www.facebook.com/watch/` | Cronômetro regressivo. |
+| Lives | `https://www.facebook.com/watch/live/` | Você escolhe a live. |
+| Jogos | `https://www.facebook.com/gaming/` | Você escolhe o jogo. |
+
+### Metas assistidas
+
+| Meta | Comportamento |
+|------|---------------|
+| Curtidas | Sorteia uma meta (ex.: 7). Você curte manualmente e registra. Ao atingir: "Meta de curtidas concluída." |
+| Solicitações de amizade | Sorteia uma meta (ex.: 3). Você envia manualmente e registra. |
+
+---
+
+## Estrutura do projeto
+
+```
+facebook-session-assistant/
+├── manifest.json        Manifest V3, permissões mínimas
+├── background.js        Service worker: sessão, etapas, alarmes, abas, notificações
+├── popup.html/css/js    Painel principal (400px): configuração, sessão, histórico
+├── options.html/css/js  Página de opções: perfis, preferências, histórico completo, reset
+├── content.js/css       Content script: widget flutuante, rolagem do Feed, detecção de login
+├── icons/               icon16/32/48/128.png
+├── utils/
+│   ├── constants.js     Nome da extensão, atividades, padrões, chaves de storage
+│   ├── random.js        randomBetween, shuffle, randomChoice
+│   ├── storage.js       Acesso a chrome.storage.local, perfis, validação, histórico
+│   ├── session.js       Funções puras: gerar sessão, calcular resumo
+│   ├── timer.js         Conversões e formatação de tempo
+│   └── logger.js        Logs com prefixo, desligáveis nas opções
+└── README.md
+```
+
+### Alterar o nome da extensão
+
+- Nome exibido pelo Chrome: `manifest.json` → campos `name`, `short_name` e `action.default_title`.
+- Nome exibido na interface: `utils/constants.js` → `APP_NAME` (e a constante de mesmo nome no topo de `content.js`).
+
+---
+
+## Como funciona por dentro
+
+- **Cronômetros por timestamp.** Cada etapa salva `deadline` (prazo absoluto), `elapsedMs` e `remainingMs`. O popup e o widget apenas recalculam `deadline - agora`. Fechar o popup não interrompe nada.
+- **chrome.alarms.** Um alarme é criado para o fim de cada etapa (`fsa-step-end`) e de cada pausa (`fsa-pause-end`). Um alarme periódico de vigilância (`fsa-watchdog`, a cada 30 s) confere se algum prazo venceu, caso o service worker tenha sido encerrado. Timers locais complementam a precisão enquanto o worker está vivo.
+- **Restauração.** Ao reiniciar o Chrome ou recarregar a extensão, `restoreSession()` lê a sessão salva, recria os alarmes e avança etapas cujo prazo venceu. Nunca inicia uma sessão nova sozinha.
+- **Fila de mutações.** Todas as alterações de sessão passam por uma fila serial, evitando condições de corrida entre alarme, popup e content script.
+- **Perfis.** Três perfis (`Perfil 1/2/3`) com configurações independentes. Troque o perfil ativo na página de opções. A estrutura permite adicionar mais perfis depois.
+- **Rolagem do Feed.** O content script rola a página com distâncias, velocidades e pausas de leitura sorteadas, às vezes volta um pouco, e pausa por alguns segundos sempre que você usa mouse, teclado ou toque. Não há mecanismo de contorno de sistemas da plataforma.
+
+### Dados salvos (`chrome.storage.local`)
+
+```json
+{
+  "schemaVersion": 1,
+  "activeProfileId": "profile-1",
+  "profiles": {
+    "profile-1": {
+      "id": "profile-1",
+      "name": "Perfil 1",
+      "settings": {
+        "feed":    { "enabled": true, "min": 1, "max": 15, "autoScroll": true },
+        "reels":   { "enabled": true, "min": 2, "max": 10 },
+        "videos":  { "enabled": true, "min": 2, "max": 8 },
+        "lives":   { "enabled": true, "min": 3, "max": 10 },
+        "games":   { "enabled": true, "min": 2, "max": 5 },
+        "likes":   { "enabled": true, "min": 5, "max": 10 },
+        "friends": { "enabled": true, "min": 1, "max": 3 },
+        "shuffle": true,
+        "pauses":  { "enabled": true, "min": 10, "max": 60 }
+      }
+    }
+  },
+  "session": null,
+  "history": [],
+  "prefs": { "notifications": true, "overlay": true, "debugLogs": true }
+}
+```
+
+---
+
+## Permissões
+
+| Permissão | Uso |
+|-----------|-----|
+| `storage` | Salvar configurações, sessão e histórico localmente. |
+| `alarms` | Cronômetros independentes do popup. |
+| `notifications` | Avisos de etapa concluída, próxima atividade e sessão finalizada. |
+| `tabs` | Abrir/reutilizar a aba da sessão e detectar quando ela é fechada. |
+| `host_permissions` (facebook.com) | Executar o content script (widget, rolagem do Feed e detecção de login) apenas em páginas do Facebook. |
+
+---
+
+## Tratamento de erros
+
+| Situação | Comportamento |
+|----------|---------------|
+| Aba da sessão fechada | Cronômetro continua; o painel mostra aviso e botão **Reabrir aba**. A próxima etapa abre em nova aba. |
+| Usuário não autenticado | O content script detecta a tela de login; painel e widget avisam; notificação é enviada. |
+| Navegador reiniciado | A sessão é restaurada com etapa, tempo, progresso e contadores. |
+| Service worker encerrado | Alarmes acordam o worker; o alarme de vigilância cobre atrasos. |
+| Dados corrompidos | Perfis, histórico e sessão inválidos são substituídos pelos padrões com aviso no console. |
+| Valores inválidos | Mínimo > máximo, negativos ou vazios são bloqueados com mensagem no formulário. |
+| Falha ao abrir página | Aviso no painel com opção de reabrir. |
+
+---
+
+## Logs
+
+Mensagens com prefixo `[Session Assistant]` aparecem no console do service worker (chrome://extensions → **Service worker**), do popup e da página do Facebook. Desative em **Opções → Registrar logs de desenvolvimento**. Erros são sempre exibidos.
+
+---
+
+## Observações
+
+- Pausas menores que 30 segundos podem ser arredondadas pelo Chrome em extensões empacotadas (limite mínimo de `chrome.alarms`). Em modo desenvolvedor (sem compactação) o limite não se aplica. O timer local do service worker e o alarme de vigilância reduzem esse efeito.
+- As URLs das seções do Facebook ficam em `utils/constants.js` e podem ser ajustadas se a plataforma mudar os caminhos.
+- Use a extensão de forma responsável e de acordo com os Termos de Serviço do Facebook.

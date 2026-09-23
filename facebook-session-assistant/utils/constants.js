@@ -1,0 +1,179 @@
+/**
+ * constants.js
+ * ------------------------------------------------------------
+ * Constantes compartilhadas por popup, options e service worker.
+ * O nome da extensão exibido na interface fica aqui (APP_NAME).
+ * O nome que aparece no Chrome fica em manifest.json ("name").
+ */
+
+export const APP_NAME = 'Facebook Session Assistant';
+export const APP_VERSION = '1.0.0';
+export const LOG_PREFIX = '[Session Assistant]';
+
+/** Versão do esquema de dados salvo em chrome.storage.local. */
+export const SCHEMA_VERSION = 1;
+
+/** Quantidade máxima de registros mantidos no histórico. */
+export const HISTORY_LIMIT = 30;
+
+/** Chaves usadas em chrome.storage.local. */
+export const STORAGE_KEYS = {
+  SCHEMA_VERSION: 'schemaVersion',
+  ACTIVE_PROFILE: 'activeProfileId',
+  PROFILES: 'profiles',
+  SESSION: 'session',
+  HISTORY: 'history',
+  PREFS: 'prefs'
+};
+
+/** Nomes dos alarmes criados com chrome.alarms. */
+export const ALARMS = {
+  STEP_END: 'fsa-step-end',
+  PAUSE_END: 'fsa-pause-end',
+  WATCHDOG: 'fsa-watchdog'
+};
+
+/** Intervalo (em minutos) do alarme de verificação periódica. */
+export const WATCHDOG_PERIOD_MINUTES = 0.5;
+
+export const SESSION_STATUS = {
+  IDLE: 'idle',         // nenhuma sessão
+  READY: 'ready',       // sessão sorteada, aguardando início
+  RUNNING: 'running',   // em execução
+  PAUSED: 'paused',     // pausada pelo usuário
+  FINISHED: 'finished'  // concluída (resumo disponível)
+};
+
+export const PHASE = {
+  NONE: 'none',
+  ACTIVITY: 'activity',
+  PAUSE: 'pause'
+};
+
+export const STEP_STATUS = {
+  PENDING: 'pending',
+  RUNNING: 'running',
+  DONE: 'done',
+  SKIPPED: 'skipped'
+};
+
+/** Rótulos de status exibidos na interface. */
+export const STATUS_LABELS = {
+  [SESSION_STATUS.IDLE]: 'Pronto',
+  [SESSION_STATUS.READY]: 'Sessão gerada',
+  [SESSION_STATUS.RUNNING]: 'Executando',
+  [SESSION_STATUS.PAUSED]: 'Pausado',
+  [SESSION_STATUS.FINISHED]: 'Finalizado'
+};
+
+/**
+ * Atividades com cronômetro. A ordem aqui é a ordem padrão quando
+ * "Embaralhar atividades" está desligado.
+ */
+export const ACTIVITIES = [
+  {
+    key: 'feed',
+    label: 'Feed',
+    title: 'Navegar pelo Feed',
+    description: 'Abre a página inicial e acompanha o tempo de navegação.',
+    url: 'https://www.facebook.com/',
+    unit: 'minutos',
+    supportsAutoScroll: true
+  },
+  {
+    key: 'reels',
+    label: 'Reels',
+    title: 'Assistir Reels',
+    description: 'Abre a área de Reels com cronômetro regressivo.',
+    url: 'https://www.facebook.com/reel/',
+    unit: 'minutos',
+    supportsAutoScroll: false
+  },
+  {
+    key: 'videos',
+    label: 'Vídeos',
+    title: 'Assistir vídeos',
+    description: 'Abre a área de vídeos (Watch).',
+    url: 'https://www.facebook.com/watch/',
+    unit: 'minutos',
+    supportsAutoScroll: false
+  },
+  {
+    key: 'lives',
+    label: 'Lives',
+    title: 'Assistir Lives',
+    description: 'Abre a área de transmissões ao vivo. Você escolhe a live.',
+    url: 'https://www.facebook.com/watch/live/',
+    unit: 'minutos',
+    supportsAutoScroll: false
+  },
+  {
+    key: 'games',
+    label: 'Jogos',
+    title: 'Jogos do Facebook',
+    description: 'Abre a área de jogos. Você escolhe o jogo.',
+    url: 'https://www.facebook.com/gaming/',
+    unit: 'minutos',
+    supportsAutoScroll: false
+  }
+];
+
+/**
+ * Metas assistidas. A extensão nunca executa essas ações sozinha:
+ * o usuário realiza a ação no Facebook e registra no contador.
+ */
+export const GOALS = [
+  {
+    key: 'likes',
+    label: 'Curtidas',
+    title: 'Curtidas durante a sessão',
+    description: 'Você curte manualmente e registra aqui.',
+    unit: 'curtidas',
+    buttonLabel: '+ Registrar curtida',
+    summaryLabel: 'Curtidas registradas',
+    doneMessage: 'Meta de curtidas concluída.'
+  },
+  {
+    key: 'friends',
+    label: 'Amigos',
+    title: 'Solicitações de amizade',
+    description: 'Você envia manualmente e registra aqui.',
+    unit: 'solicitações',
+    buttonLabel: '+ Registrar solicitação',
+    summaryLabel: 'Solicitações registradas',
+    doneMessage: 'Meta de solicitações concluída.'
+  }
+];
+
+/** Configuração padrão de um perfil. */
+export const DEFAULT_SETTINGS = {
+  feed: { enabled: true, min: 1, max: 15, autoScroll: true },
+  reels: { enabled: true, min: 2, max: 10 },
+  videos: { enabled: true, min: 2, max: 8 },
+  lives: { enabled: true, min: 3, max: 10 },
+  games: { enabled: true, min: 2, max: 5 },
+  likes: { enabled: true, min: 5, max: 10 },
+  friends: { enabled: true, min: 1, max: 3 },
+  shuffle: true,
+  pauses: { enabled: true, min: 10, max: 60 }
+};
+
+/** Preferências globais (independentes de perfil). */
+export const DEFAULT_PREFS = {
+  notifications: true,
+  overlay: true,
+  debugLogs: true
+};
+
+/** Limites de validação dos formulários. */
+export const LIMITS = {
+  activityMinutesMin: 1,
+  activityMinutesMax: 600,
+  goalCountMin: 0,
+  goalCountMax: 1000,
+  pauseSecondsMin: 0,
+  pauseSecondsMax: 3600
+};
+
+/** Perfis criados na primeira execução. */
+export const DEFAULT_PROFILE_IDS = ['profile-1', 'profile-2', 'profile-3'];
