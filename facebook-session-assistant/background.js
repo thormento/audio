@@ -36,6 +36,7 @@ import {
 } from './utils/session.js';
 import { formatClock, formatDuration, minutesToMs } from './utils/timer.js';
 import { randomBetween } from './utils/random.js';
+import { randomGreeting } from './utils/messages.js';
 import { log, warn, error, initLogger } from './utils/logger.js';
 
 initLogger();
@@ -742,6 +743,17 @@ chrome.tabs.onRemoved.addListener((tabId) => {
   }).catch((err) => error('Falha ao tratar fechamento de aba', err));
 });
 
+let lastGreeting = null;
+
+/** Sorteia uma saudação (banco + personalizadas), evitando repetir a última. */
+async function suggestGreeting() {
+  const prefs = await storage.getPrefs();
+  const text = randomGreeting(prefs.customGreetings, lastGreeting);
+  lastGreeting = text;
+  log('Saudação sugerida');
+  return { text };
+}
+
 const handlers = {
   'session:get': async () => storage.getSession(),
   'session:generate': generateSession,
@@ -757,6 +769,7 @@ const handlers = {
   },
   'session:registerGoal': async (message) => registerGoal(message.goal),
   'session:reopenTab': reopenTab,
+  'messages:suggest': suggestGreeting,
   'scheduler:get': async () => storage.getScheduler(),
   'scheduler:sync': syncScheduler,
   'scheduler:stop': async () => stopScheduler('pedido do usuário'),

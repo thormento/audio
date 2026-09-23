@@ -50,6 +50,16 @@
     </section>
 
     <section class="card">
+      <h2>Saudações para mensagens</h2>
+      <p class="muted">A extensão já traz <span id="greetings-count">50</span> saudações. Adicione as suas abaixo, uma por linha. O envio é sempre manual: a extensão só sorteia e copia o texto.</p>
+      <textarea id="custom-greetings" rows="6" placeholder="Ex.: Oi! Lembrei de você hoje, tudo bem?"></textarea>
+      <div class="row">
+        <button type="button" class="btn btn-secondary" id="btn-save-greetings">Salvar saudações</button>
+        <span class="muted" id="custom-greetings-count"></span>
+      </div>
+    </section>
+
+    <section class="card">
       <div class="card-head">
         <h2>Histórico</h2>
         <button type="button" class="btn btn-ghost" id="btn-clear-history">Limpar histórico</button>
@@ -68,8 +78,10 @@
               <th>Vídeos</th>
               <th>Lives</th>
               <th>Jogos</th>
+              <th>Messenger</th>
               <th>Curtidas</th>
               <th>Solicitações</th>
+              <th>Mensagens</th>
             </tr>
           </thead>
           <tbody></tbody>

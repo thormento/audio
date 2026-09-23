@@ -8,6 +8,7 @@ import { APP_NAME, ACTIVITIES, HISTORY_LIMIT, STORAGE_KEYS } from './utils/const
 import * as storage from './utils/storage.js';
 import { formatDate, formatTime, formatDuration, formatMinutesShort } from './utils/timer.js';
 import { log, error, initLogger } from './utils/logger.js';
+import { GREETINGS } from './utils/messages.js';
 
 const $ = (selector) => document.querySelector(selector);
 
@@ -42,6 +43,16 @@ async function renderPrefs() {
   $('#pref-notifications').checked = prefs.notifications;
   $('#pref-overlay').checked = prefs.overlay;
   $('#pref-logs').checked = prefs.debugLogs;
+  $('#greetings-count').textContent = GREETINGS.length;
+  $('#custom-greetings').value = prefs.customGreetings.join('\n');
+  $('#custom-greetings-count').textContent = `${prefs.customGreetings.length} personalizada(s)`;
+}
+
+async function saveGreetings() {
+  const lines = $('#custom-greetings').value.split('\n').map((l) => l.trim()).filter(Boolean);
+  const prefs = await storage.savePrefs({ customGreetings: lines });
+  $('#custom-greetings-count').textContent = `${prefs.customGreetings.length} personalizada(s)`;
+  toast('Saudações salvas.', 'success');
 }
 
 async function savePrefsFromForm() {
@@ -76,6 +87,7 @@ async function renderHistory() {
           ${cells}
           <td>${entry.likes || 0}</td>
           <td>${entry.friends || 0}</td>
+          <td>${entry.messages || 0}</td>
         </tr>`;
     })
     .join('');
@@ -111,6 +123,8 @@ function bindEvents() {
     await storage.resetProfileSettings($('#profile-select').value);
     toast('Configurações do perfil restauradas.', 'success');
   });
+
+  $('#btn-save-greetings').addEventListener('click', saveGreetings);
 
   ['#pref-notifications', '#pref-overlay', '#pref-logs'].forEach((selector) => {
     $(selector).addEventListener('change', savePrefsFromForm);

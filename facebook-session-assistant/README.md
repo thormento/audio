@@ -2,7 +2,7 @@
 
 Extensão para Google Chrome (Manifest V3) que organiza e executa **sessões de navegação no Facebook**: você define intervalos mínimos e máximos para cada atividade, a extensão sorteia os valores a cada nova sessão, abre a seção correspondente, controla os cronômetros, as pausas e as metas assistidas, e salva um histórico local.
 
-> A extensão **não** curte, **não** envia solicitações de amizade, **não** comenta, **não** compartilha e **não** envia mensagens. Essas ações permanecem manuais: você as executa no Facebook e apenas registra no contador. Nenhum dado sai do seu navegador.
+> A extensão **não** curte, **não** envia solicitações de amizade, **não** comenta, **não** compartilha e **não** envia mensagens. Essas ações permanecem manuais: você as executa no Facebook e apenas registra no contador. Para mensagens, ela apenas sorteia e copia uma saudação. Nenhum dado sai do seu navegador.
 
 ---
 
@@ -52,6 +52,7 @@ A extensão usa a conta do Facebook que já estiver autenticada no navegador. N�
 | Vídeos | `https://www.facebook.com/watch/` | Cronômetro regressivo. |
 | Lives | `https://www.facebook.com/watch/live/` | Você escolhe a live. |
 | Jogos | `https://www.facebook.com/gaming/` | Você escolhe o jogo. |
+| Messenger | `https://www.facebook.com/messages/` | Você escolhe o amigo e envia a saudação sugerida. |
 
 ### Metas assistidas
 
@@ -59,6 +60,7 @@ A extensão usa a conta do Facebook que já estiver autenticada no navegador. N�
 |------|---------------|
 | Curtidas | Sorteia uma meta (ex.: 7). Você curte manualmente e registra. Ao atingir: "Meta de curtidas concluída." |
 | Solicitações de amizade | Sorteia uma meta (ex.: 3). Você envia manualmente e registra. |
+| Mensagens | Sorteia uma meta (ex.: 2). O botão **Sugerir saudação** sorteia uma das 50 saudações do banco (mais as suas, cadastradas nas opções) e copia o texto. Você cola no Messenger, envia e registra. A extensão nunca envia mensagens sozinha. |
 
 ---
 
@@ -119,8 +121,10 @@ facebook-session-assistant/
         "videos":  { "enabled": true, "min": 2, "max": 8, "weight": 20 },
         "lives":   { "enabled": true, "min": 3, "max": 10, "weight": 15 },
         "games":   { "enabled": true, "min": 2, "max": 5, "weight": 10 },
+        "messenger": { "enabled": true, "min": 2, "max": 5, "weight": 10 },
         "likes":   { "enabled": true, "min": 5, "max": 10 },
         "friends": { "enabled": true, "min": 1, "max": 3 },
+        "messages": { "enabled": true, "min": 1, "max": 3 },
         "shuffle": true,
         "pauses":  { "enabled": true, "min": 10, "max": 60 }
       }
@@ -128,7 +132,7 @@ facebook-session-assistant/
   },
   "session": null,
   "history": [],
-  "prefs": { "notifications": true, "overlay": true, "debugLogs": true }
+  "prefs": { "notifications": true, "overlay": true, "debugLogs": true, "customGreetings": [] }
 }
 ```
 

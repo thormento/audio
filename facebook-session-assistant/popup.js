@@ -33,6 +33,7 @@ const state = {
   settings: null,
   session: null,
   scheduler: null,
+  greeting: '',
   history: [],
   profileName: '',
   view: 'panel',
@@ -261,7 +262,7 @@ function currentMode() {
   return checked ? checked.value : DURATION_MODES.RANDOM;
 }
 
-const DIST_COLORS = { feed: '#1877F2', reels: '#E1306C', videos: '#31A24C', lives: '#F7B928', games: '#8E44AD' };
+const DIST_COLORS = { feed: '#1877F2', reels: '#E1306C', videos: '#31A24C', lives: '#F7B928', games: '#8E44AD', messenger: '#00B2FF' };
 
 /** Atualiza a prévia da divisão do tempo total e os rótulos das barras. */
 function updateDistributionPreview() {
@@ -506,6 +507,19 @@ function renderLiveGoals(session) {
       <button type="button" class="btn btn-secondary btn-small" data-goal="${goal.key}">${goal.buttonLabel}</button>
     `;
     goalsBox.appendChild(row);
+    if (goal.suggest) {
+      const box = document.createElement('div');
+      box.className = 'suggestion';
+      box.innerHTML = `
+        <p class="suggestion-text" id="greeting-text">${state.greeting ? escapeHtml(state.greeting) : 'Clique em "Sugerir saudação" para sortear uma mensagem.'}</p>
+        <div class="suggestion-actions">
+          <button type="button" class="btn btn-secondary btn-small" data-suggest>Sugerir saudação</button>
+          <button type="button" class="btn btn-primary btn-small" data-copy ${state.greeting ? '' : 'disabled'}>Copiar</button>
+        </div>
+        <p class="muted small">Cole no Messenger, envie você mesmo e depois registre.</p>
+      `;
+      goalsBox.appendChild(box);
+    }
   });
 
   const paused = session.status === SESSION_STATUS.PAUSED;
@@ -593,7 +607,7 @@ function renderHistory() {
           </div>
           <div class="details">
             ${acts || 'Sem atividades registradas'}<br>
-            Curtidas: ${entry.likes || 0} · Solicitações: ${entry.friends || 0}
+            Curtidas: ${entry.likes || 0} · Solicitações: ${entry.friends || 0} · Mensagens: ${entry.messages || 0}
           </div>
         </div>`;
     })
@@ -717,9 +731,29 @@ function bindEvents() {
   $('#btn-reopen').addEventListener('click', () => runCommand('session:reopenTab'));
   $('#btn-new').addEventListener('click', () => runCommand('session:discard'));
 
-  $('#live-goals').addEventListener('click', (event) => {
+  $('#live-goals').addEventListener('click', async (event) => {
     const button = event.target.closest('[data-goal]');
-    if (button) runCommand('session:registerGoal', { goal: button.dataset.goal });
+    if (button) {
+      runCommand('session:registerGoal', { goal: button.dataset.goal });
+      return;
+    }
+    if (event.target.closest('[data-suggest]')) {
+      try {
+        const result = await send('messages:suggest');
+        state.greeting = result.text || '';
+        $('#greeting-text').textContent = state.greeting;
+        $('#live-goals').querySelector('[data-copy]').disabled = !state.greeting;
+        await copyText(state.greeting);
+        toast('Saudação sorteada e copiada. Cole no Messenger.', 'success');
+      } catch (err) {
+        toast(err.message, 'error');
+      }
+      return;
+    }
+    if (event.target.closest('[data-copy]') && state.greeting) {
+      await copyText(state.greeting);
+      toast('Saudação copiada.', 'success');
+    }
   });
 
   $('#btn-clear-history').addEventListener('click', async () => {
@@ -771,6 +805,22 @@ async function loadSettings() {
   const activeId = await storage.getActiveProfileId();
   state.profileName = profiles[activeId] ? profiles[activeId].name : activeId;
   $('#profile-name').textContent = state.profileName;
+}
+
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch (_err) {
+    const area = document.createElement('textarea');
+    area.value = text;
+    document.body.appendChild(area);
+    area.select();
+    try {
+      document.execCommand('copy');
+    } finally {
+      area.remove();
+    }
+  }
 }
 
 function escapeHtml(value) {

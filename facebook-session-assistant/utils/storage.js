@@ -468,7 +468,10 @@ export async function getPrefs() {
   return {
     notifications: typeof raw.notifications === 'boolean' ? raw.notifications : DEFAULT_PREFS.notifications,
     overlay: typeof raw.overlay === 'boolean' ? raw.overlay : DEFAULT_PREFS.overlay,
-    debugLogs: typeof raw.debugLogs === 'boolean' ? raw.debugLogs : DEFAULT_PREFS.debugLogs
+    debugLogs: typeof raw.debugLogs === 'boolean' ? raw.debugLogs : DEFAULT_PREFS.debugLogs,
+    customGreetings: Array.isArray(raw.customGreetings)
+      ? raw.customGreetings.filter((m) => typeof m === 'string' && m.trim()).map((m) => m.trim().slice(0, 300)).slice(0, 200)
+      : []
   };
 }
 

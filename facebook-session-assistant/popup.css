@@ -274,6 +274,12 @@ main { padding: 12px 16px 18px; }
 .goal-row .goal-done { font-size: 12px; color: var(--success); font-weight: 600; }
 .goal-row .btn { flex: 0 0 auto; }
 
+/* Sugestão de saudação */
+.suggestion { background: var(--bg); border-radius: 10px; padding: 10px; margin-top: 2px; }
+.suggestion-text { font-size: 13px; line-height: 1.45; margin-bottom: 8px; }
+.suggestion-actions { display: flex; gap: 8px; margin-bottom: 6px; }
+.suggestion-actions .btn { flex: 1; }
+
 /* Resumo */
 .summary-list { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; margin: 10px 0 0; }
 .summary-list dt { color: var(--muted); }

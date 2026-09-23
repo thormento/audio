@@ -49,6 +49,17 @@
 #fsa-overlay .fsa-goal button:hover { background: #1877F2; color: #fff; }
 #fsa-overlay .fsa-goal button:disabled { opacity: 0.5; cursor: default; }
 
+#fsa-overlay .fsa-greeting { background: #F0F2F5; border-radius: 8px; padding: 8px; margin-top: 2px; }
+#fsa-overlay .fsa-greeting-text { margin: 0 0 6px; font-size: 12px; line-height: 1.4; }
+#fsa-overlay .fsa-greeting-actions { display: flex; gap: 6px; }
+#fsa-overlay .fsa-greeting-actions button {
+  flex: 1; border: 1px solid #1877F2; background: #fff; color: #1877F2; font-weight: 700; font-size: 12px;
+  padding: 4px 8px; border-radius: 8px; cursor: pointer;
+}
+#fsa-overlay .fsa-greeting-actions button:hover { background: #1877F2; color: #fff; }
+#fsa-overlay .fsa-greeting-actions button:disabled { opacity: 0.5; cursor: default; }
+#fsa-overlay .fsa-greeting-note { margin: 6px 0 0; font-size: 11px; color: #65676B; }
+
 #fsa-overlay .fsa-warning {
   margin-top: 10px; background: #FFF6DB; color: #6B4F00; border-radius: 8px; padding: 6px 8px; font-size: 12px;
 }

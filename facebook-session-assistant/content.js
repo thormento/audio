@@ -213,6 +213,23 @@
       overlay.querySelector('.fsa-toggle').textContent = state.overlayCollapsed ? '+' : '–';
     });
     overlay.querySelector('.fsa-goals').addEventListener('click', async (event) => {
+      const suggest = event.target.closest('[data-suggest]');
+      if (suggest) {
+        const result = await sendMessage('messages:suggest');
+        currentGreeting = result && result.text ? result.text : '';
+        const copied = currentGreeting ? await copyText(currentGreeting) : false;
+        renderOverlay();
+        const note = overlay.querySelector('.fsa-greeting-note');
+        if (note) note.textContent = copied ? 'Copiada! Cole na conversa e envie.' : 'Selecione o texto e copie.';
+        return;
+      }
+      const copy = event.target.closest('[data-copy]');
+      if (copy && currentGreeting) {
+        const copied = await copyText(currentGreeting);
+        const note = overlay.querySelector('.fsa-greeting-note');
+        if (note) note.textContent = copied ? 'Copiada! Cole na conversa e envie.' : 'Selecione o texto e copie.';
+        return;
+      }
       const button = event.target.closest('[data-goal]');
       if (!button) return;
       button.disabled = true;
@@ -230,8 +247,31 @@
 
   const GOAL_LABELS = {
     likes: { label: 'Curtidas', button: '+ Curtida' },
-    friends: { label: 'Amigos', button: '+ Solicitação' }
+    friends: { label: 'Amigos', button: '+ Solicitação' },
+    messages: { label: 'Mensagens', button: '+ Mensagem', suggest: true }
   };
+  let currentGreeting = '';
+
+  async function copyText(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch (_error) {
+      const area = document.createElement('textarea');
+      area.value = text;
+      area.style.position = 'fixed';
+      area.style.opacity = '0';
+      document.body.appendChild(area);
+      area.select();
+      let ok = false;
+      try {
+        ok = document.execCommand('copy');
+      } finally {
+        area.remove();
+      }
+      return ok;
+    }
+  }
 
   function renderOverlay() {
     const session = state.session;
@@ -273,10 +313,23 @@
       .map((key) => {
         const g = session.goals[key];
         const done = g.done >= g.target;
-        return `
+        const row = `
           <div class="fsa-goal ${done ? 'fsa-goal-done' : ''}">
             <span>${GOAL_LABELS[key].label}: <strong>${g.done} / ${g.target}</strong>${done ? ' ✓' : ''}</span>
             <button type="button" data-goal="${key}">${GOAL_LABELS[key].button}</button>
+          </div>`;
+        if (!GOAL_LABELS[key].suggest) return row;
+        const text = currentGreeting
+          ? currentGreeting.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+          : 'Clique em "Saudação" para sortear uma mensagem.';
+        return `${row}
+          <div class="fsa-greeting">
+            <p class="fsa-greeting-text">${text}</p>
+            <div class="fsa-greeting-actions">
+              <button type="button" data-suggest>Saudação</button>
+              <button type="button" data-copy ${currentGreeting ? '' : 'disabled'}>Copiar</button>
+            </div>
+            <p class="fsa-greeting-note">Você cola e envia; a extensão só sugere.</p>
           </div>`;
       });
     goalsBox.innerHTML = rows.join('');

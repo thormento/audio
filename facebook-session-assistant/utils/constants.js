@@ -117,6 +117,15 @@ export const ACTIVITIES = [
     url: 'https://www.facebook.com/gaming/',
     unit: 'minutos',
     supportsAutoScroll: false
+  },
+  {
+    key: 'messenger',
+    label: 'Messenger',
+    title: 'Conversar com amigos',
+    description: 'Abre as mensagens. Você escolhe o amigo e envia a saudação sugerida.',
+    url: 'https://www.facebook.com/messages/',
+    unit: 'minutos',
+    supportsAutoScroll: false
   }
 ];
 
@@ -144,6 +153,17 @@ export const GOALS = [
     buttonLabel: '+ Registrar solicitação',
     summaryLabel: 'Solicitações registradas',
     doneMessage: 'Meta de solicitações concluída.'
+  },
+  {
+    key: 'messages',
+    label: 'Mensagens',
+    title: 'Mensagens de saudação para amigos',
+    description: 'A extensão sorteia e copia a saudação; você cola, envia e registra.',
+    unit: 'mensagens',
+    buttonLabel: '+ Registrar mensagem',
+    summaryLabel: 'Mensagens registradas',
+    doneMessage: 'Meta de mensagens concluída.',
+    suggest: true
   }
 ];
 
@@ -188,8 +208,10 @@ export const DEFAULT_SETTINGS = {
   videos: { enabled: true, min: 2, max: 8, weight: 20 },
   lives: { enabled: true, min: 3, max: 10, weight: 15 },
   games: { enabled: true, min: 2, max: 5, weight: 10 },
+  messenger: { enabled: true, min: 2, max: 5, weight: 10 },
   likes: { enabled: true, min: 5, max: 10 },
   friends: { enabled: true, min: 1, max: 3 },
+  messages: { enabled: true, min: 1, max: 3 },
   shuffle: true,
   pauses: { enabled: true, min: 10, max: 60 }
 };
@@ -198,7 +220,8 @@ export const DEFAULT_SETTINGS = {
 export const DEFAULT_PREFS = {
   notifications: true,
   overlay: true,
-  debugLogs: true
+  debugLogs: true,
+  customGreetings: []
 };
 
 /** Limites de validação dos formulários. */
