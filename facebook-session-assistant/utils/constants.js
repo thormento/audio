@@ -183,7 +183,7 @@ export const DEFAULT_PREFS = {
 
 /** Limites de validação dos formulários. */
 export const LIMITS = {
-  activityMinutesMin: 1,
+  activityMinutesMin: 0,
   activityMinutesMax: 600,
   totalMinutesMin: 1,
   totalMinutesMax: 600,

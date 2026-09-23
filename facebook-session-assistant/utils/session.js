@@ -71,11 +71,14 @@ export function buildSession(settings, profileId) {
   const totalMode = settings.durationMode === DURATION_MODES.TOTAL;
   const distributed = totalMode ? distributeTotalMinutes(settings) : {};
 
+  // Regra do zero: no modo aleatório, tempo máximo 0 (ou um sorteio que
+  // resulte em 0 minutos) faz a atividade ser pulada nesta sessão. No modo
+  // total, participação 0% tem o mesmo efeito.
   let steps = ACTIVITIES.filter((activity) => {
     const cfg = settings[activity.key];
     if (!cfg || !cfg.enabled) return false;
     if (totalMode) return Boolean(distributed[activity.key]);
-    return true;
+    return cfg.max > 0;
   }).map(
     (activity) => {
       const cfg = settings[activity.key];
@@ -96,13 +99,13 @@ export function buildSession(settings, profileId) {
         autoScroll: Boolean(activity.supportsAutoScroll && cfg.autoScroll)
       };
     }
-  );
+  ).filter((step) => step.durationMs > 0);
 
   if (steps.length === 0) {
     throw new Error(
       totalMode
         ? 'Nenhuma atividade recebeu tempo. Ative pelo menos uma atividade com participação maior que zero.'
-        : 'Ative pelo menos uma atividade antes de gerar a sessão.'
+        : 'Nenhuma atividade recebeu tempo. Selecione pelo menos uma atividade com tempo máximo maior que 0.'
     );
   }
 

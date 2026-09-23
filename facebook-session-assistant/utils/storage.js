@@ -197,7 +197,13 @@ export function validateSettings(settings) {
 
   const anyActivity = ACTIVITIES.some((activity) => s[activity.key].enabled);
   if (!anyActivity) {
-    errors.push({ field: 'activities', message: 'Ative pelo menos uma atividade.' });
+    errors.push({ field: 'activities', message: 'Selecione pelo menos uma atividade para executar.' });
+  } else if (!totalMode) {
+    // Tempo máximo 0 significa "não executar": ao menos uma precisa ter tempo.
+    const anyTime = ACTIVITIES.some((activity) => s[activity.key].enabled && s[activity.key].max > 0);
+    if (!anyTime) {
+      errors.push({ field: 'activities', message: 'Todas as atividades selecionadas estão com tempo máximo 0. Informe um tempo para pelo menos uma.' });
+    }
   }
 
   return { valid: errors.length === 0, errors, settings: s };

@@ -115,14 +115,17 @@ function buildActivityCards() {
           <h3>${activity.label}</h3>
           <p class="desc">${activity.title} · ${activity.description}</p>
         </div>
-        <label class="switch" title="Ativar/desativar">
-          <input type="checkbox" data-field="${activity.key}.enabled">
-          <span></span>
-        </label>
+        <div class="toggle-wrap">
+          <div class="run-label">Executar: <strong data-run-label="${activity.key}">Sim</strong></div>
+          <label class="switch" title="Executar esta atividade na sessão">
+            <input type="checkbox" data-field="${activity.key}.enabled">
+            <span></span>
+          </label>
+        </div>
       </div>
       <div class="range-row mode-random">
-        <label><span>Tempo mínimo</span><input type="number" min="1" step="1" data-field="${activity.key}.min"></label>
-        <label><span>Tempo máximo</span><input type="number" min="1" step="1" data-field="${activity.key}.max"></label>
+        <label><span>Tempo mínimo</span><input type="number" min="0" step="1" data-field="${activity.key}.min"></label>
+        <label><span>Tempo máximo (0 = não executa)</span><input type="number" min="0" step="1" data-field="${activity.key}.max"></label>
         <span class="unit">${activity.unit}</span>
       </div>
       <div class="weight-row mode-total">
@@ -189,6 +192,28 @@ function fillForm() {
   if (modeInput) modeInput.checked = true;
   $('#opt-total-minutes').value = s.totalMinutes;
   updateCardStates();
+}
+
+function buildActivityChecklist() {
+  const box = $('#activity-checklist');
+  box.innerHTML = ACTIVITIES.map(
+    (a) => `<label><input type="checkbox" data-run="${a.key}"><span>${a.label}</span></label>`
+  ).join('');
+}
+
+/** Sincroniza a lista de seleção com os interruptores dos cards. */
+function syncChecklist() {
+  let count = 0;
+  ACTIVITIES.forEach((a) => {
+    const toggle = document.querySelector(`[data-field="${a.key}.enabled"]`);
+    const check = document.querySelector(`[data-run="${a.key}"]`);
+    const label = document.querySelector(`[data-run-label="${a.key}"]`);
+    const enabled = Boolean(toggle && toggle.checked);
+    if (check) check.checked = enabled;
+    if (label) label.textContent = enabled ? 'Sim' : 'Não';
+    if (enabled) count += 1;
+  });
+  $('#activity-count').textContent = `${count} de ${ACTIVITIES.length}`;
 }
 
 function buildTotalPresets() {
@@ -264,6 +289,7 @@ function updateCardStates() {
     const toggle = card.querySelector('input[type="checkbox"][data-field$=".enabled"]');
     card.classList.toggle('disabled', toggle && !toggle.checked);
   });
+  syncChecklist();
   $('#pause-range').style.opacity = $('#opt-pauses').checked ? '1' : '0.45';
   const totalMode = currentMode() === DURATION_MODES.TOTAL;
   $('#total-config').hidden = !totalMode;
@@ -308,11 +334,19 @@ function renderDrawnValues() {
   const session = state.session;
   document.querySelectorAll('[data-drawn]').forEach((el) => {
     el.textContent = '—';
+    el.parentElement.classList.remove('skipped');
   });
   if (!session) return;
-  session.steps.forEach((step) => {
-    const el = document.querySelector(`[data-drawn="${step.key}"]`);
-    if (el) el.textContent = formatClock(step.durationMs);
+  ACTIVITIES.forEach((activity) => {
+    const el = document.querySelector(`[data-drawn="${activity.key}"]`);
+    if (!el) return;
+    const step = session.steps.find((s) => s.key === activity.key);
+    if (step) {
+      el.textContent = formatClock(step.durationMs);
+    } else {
+      el.textContent = 'não executada';
+      el.parentElement.classList.add('skipped');
+    }
   });
   GOALS.forEach((goal) => {
     const g = session.goals[goal.key];
@@ -555,6 +589,13 @@ function bindEvents() {
   $('#view-config').addEventListener('input', (event) => {
     if (event.target.matches('input[type="range"], #opt-total-minutes')) updateDistributionPreview();
   });
+  $('#activity-checklist').addEventListener('change', (event) => {
+    const check = event.target.closest('[data-run]');
+    if (!check) return;
+    const toggle = document.querySelector(`[data-field="${check.dataset.run}.enabled"]`);
+    if (toggle) toggle.checked = check.checked;
+    updateCardStates();
+  });
   $('#total-presets').addEventListener('click', (event) => {
     const chip = event.target.closest('[data-preset]');
     if (!chip) return;
@@ -647,6 +688,7 @@ async function init() {
   $('#app-name').textContent = APP_NAME;
   buildActivityCards();
   buildGoalCards();
+  buildActivityChecklist();
   buildTotalPresets();
   bindEvents();
   try {

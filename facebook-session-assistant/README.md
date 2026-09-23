@@ -24,22 +24,23 @@ A extensão usa a conta do Facebook que já estiver autenticada no navegador. N�
 ## Como usar
 
 1. **Abra o painel** clicando no ícone da extensão.
-2. **Escolha o modo de duração** no card "Duração das atividades":
+2. **Marque quais atividades executar** no card "Quais atividades executar". Pode ser uma só (por exemplo, apenas Feed ou apenas Lives). Cada card também tem o interruptor "Executar: Sim/Não". Outra forma de pular uma atividade é deixar o **tempo máximo em 0** (ou a participação em 0% no modo de tempo total): ela aparece como "não executada" na sessão.
+3. **Escolha o modo de duração** no card "Duração das atividades":
    - **Sortear entre mín. e máx.**: cada atividade tem tempo mínimo e máximo (minutos) e a extensão sorteia um valor a cada sessão.
    - **Tempo total dividido**: escolha o tempo total da sessão (1, 2, 5, 10, 15, 20 min ou outro valor) e ajuste a **barra de participação** de cada atividade. Os minutos são divididos proporcionalmente e a prévia mostra quanto cada uma recebe. Participação 0% deixa a atividade de fora.
-   Ative/desative cada atividade pelo interruptor. Para as metas (Curtidas, Amigos) informe quantidade mínima e máxima.
-3. Ajuste as opções de sessão: **Embaralhar atividades** e **Pausa entre atividades** (segundos).
-4. Clique em **Salvar configurações**.
-5. Clique em **Gerar nova sessão**. A extensão define:
+   Para as metas (Curtidas, Amigos) informe quantidade mínima e máxima.
+4. Ajuste as opções de sessão: **Embaralhar atividades** e **Pausa entre atividades** (segundos).
+5. Clique em **Salvar configurações**.
+6. Clique em **Gerar nova sessão**. A extensão define:
    - a duração de cada atividade (sorteada ou dividida pelo tempo total, conforme o modo);
    - a quantidade de cada meta;
    - a pausa entre cada etapa;
    - a ordem das etapas (se o embaralhamento estiver ativo).
-6. Revise os valores sorteados e clique em **Iniciar sessão**.
-7. A extensão abre a seção correspondente do Facebook e inicia o cronômetro. O popup pode ser fechado: a sessão continua no service worker.
-8. Use **Pausar / Continuar / Pular etapa / Finalizar** quando quiser.
-9. Ao curtir ou enviar uma solicitação manualmente, clique em **+ Registrar curtida** / **+ Registrar solicitação** (no popup ou no widget flutuante na página).
-10. Ao terminar, a extensão mostra o **resumo** e grava a sessão no **histórico** (últimos 30 registros).
+7. Revise os valores sorteados e clique em **Iniciar sessão**.
+8. A extensão abre a seção correspondente do Facebook e inicia o cronômetro. O popup pode ser fechado: a sessão continua no service worker.
+9. Use **Pausar / Continuar / Pular etapa / Finalizar** quando quiser.
+10. Ao curtir ou enviar uma solicitação manualmente, clique em **+ Registrar curtida** / **+ Registrar solicitação** (no popup ou no widget flutuante na página).
+11. Ao terminar, a extensão mostra o **resumo** e grava a sessão no **histórico** (últimos 30 registros).
 
 ### Atividades
 
@@ -151,7 +152,7 @@ facebook-session-assistant/
 | Navegador reiniciado | A sessão é restaurada com etapa, tempo, progresso e contadores. |
 | Service worker encerrado | Alarmes acordam o worker; o alarme de vigilância cobre atrasos. |
 | Dados corrompidos | Perfis, histórico e sessão inválidos são substituídos pelos padrões com aviso no console. |
-| Valores inválidos | Mínimo > máximo, negativos ou vazios são bloqueados com mensagem no formulário. |
+| Valores inválidos | Mínimo > máximo, negativos ou vazios são bloqueados com mensagem no formulário. Tempo máximo 0 é permitido e significa "não executar"; se todas as atividades marcadas estiverem em 0, o painel avisa. |
 | Falha ao abrir página | Aviso no painel com opção de reabrir. |
 
 ---

@@ -133,6 +133,21 @@ main { padding: 12px 16px 18px; }
 
 .card.disabled .range-row, .card.disabled .drawn, .card.disabled .check-row, .card.disabled .weight-row { opacity: 0.45; }
 
+/* Lista de seleção de atividades */
+.pill-muted { background: var(--bg); color: var(--muted); padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+.checklist { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+.checklist label {
+  display: flex; align-items: center; gap: 8px; padding: 10px; border: 1px solid var(--border);
+  border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 13px; color: var(--muted);
+}
+.checklist input { width: 18px; height: 18px; accent-color: var(--primary); margin: 0; }
+.checklist label:has(input:checked) { border-color: var(--primary); background: var(--primary-soft); color: var(--primary-dark); }
+.hint { margin-top: 10px; }
+.card-head .run-label { font-size: 11px; color: var(--muted); text-align: right; margin-bottom: 2px; }
+.card-head .run-label strong { color: var(--text); }
+.card-head .toggle-wrap { display: flex; flex-direction: column; align-items: flex-end; flex-shrink: 0; }
+.drawn.skipped { background: #F0F2F5; color: var(--muted); }
+
 /* Seletor de modo de duração */
 .mode-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
 .mode-option {
