@@ -23,14 +23,16 @@ export const STORAGE_KEYS = {
   PROFILES: 'profiles',
   SESSION: 'session',
   HISTORY: 'history',
-  PREFS: 'prefs'
+  PREFS: 'prefs',
+  SCHEDULER: 'scheduler'
 };
 
 /** Nomes dos alarmes criados com chrome.alarms. */
 export const ALARMS = {
   STEP_END: 'fsa-step-end',
   PAUSE_END: 'fsa-pause-end',
-  WATCHDOG: 'fsa-watchdog'
+  WATCHDOG: 'fsa-watchdog',
+  AUTO_NEXT: 'fsa-auto-next'
 };
 
 /** Intervalo (em minutos) do alarme de verificação periódica. */
@@ -159,8 +161,26 @@ export const DURATION_MODES = {
 /** Opções rápidas de tempo total (minutos) no modo "total". */
 export const TOTAL_MINUTES_PRESETS = [1, 2, 5, 10, 15, 20];
 
+/**
+ * Repetição automática: ao terminar uma sessão, a extensão espera um
+ * intervalo e gera/inicia outra sessão sozinha (com novos sorteios).
+ *  - fixed:  espera sempre a mesma quantidade de minutos;
+ *  - random: sorteia a espera entre mínimo e máximo (minutos).
+ */
+export const REPEAT_MODES = {
+  FIXED: 'fixed',
+  RANDOM: 'random'
+};
+
+/** Opções rápidas de intervalo (minutos) para a repetição automática. */
+export const REPEAT_MINUTES_PRESETS = [15, 30, 60, 90, 120, 180];
+
+/** Espera usada quando o navegador reabre com uma repetição já vencida. */
+export const REPEAT_CATCHUP_MS = 60 * 1000;
+
 /** Configuração padrão de um perfil. */
 export const DEFAULT_SETTINGS = {
+  autoRepeat: { enabled: false, mode: REPEAT_MODES.FIXED, minutes: 60, min: 60, max: 90 },
   durationMode: DURATION_MODES.RANDOM,
   totalMinutes: 10,
   feed: { enabled: true, min: 1, max: 15, weight: 30, autoScroll: true },
@@ -189,6 +209,8 @@ export const LIMITS = {
   totalMinutesMax: 600,
   weightMin: 0,
   weightMax: 100,
+  repeatMinutesMin: 1,
+  repeatMinutesMax: 1440,
   goalCountMin: 0,
   goalCountMax: 1000,
   pauseSecondsMin: 0,

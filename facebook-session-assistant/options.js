@@ -69,7 +69,7 @@ async function renderHistory() {
       }).join('');
       return `
         <tr>
-          <td>${formatDate(entry.date)}</td>
+          <td>${formatDate(entry.date)}${entry.auto ? ' <span class="tag">auto</span>' : ''}</td>
           <td>${formatTime(entry.startedAt)}</td>
           <td>${formatTime(entry.endedAt)}</td>
           <td>${formatDuration(entry.durationMs)}</td>

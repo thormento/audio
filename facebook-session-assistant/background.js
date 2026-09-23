@@ -22,7 +22,9 @@ import {
   PHASE,
   STEP_STATUS,
   GOALS,
-  APP_NAME
+  APP_NAME,
+  REPEAT_MODES,
+  REPEAT_CATCHUP_MS
 } from './utils/constants.js';
 import * as storage from './utils/storage.js';
 import {
@@ -32,7 +34,8 @@ import {
   computeSummary,
   summaryToHistoryEntry
 } from './utils/session.js';
-import { formatClock, formatDuration } from './utils/timer.js';
+import { formatClock, formatDuration, minutesToMs } from './utils/timer.js';
+import { randomBetween } from './utils/random.js';
 import { log, warn, error, initLogger } from './utils/logger.js';
 
 initLogger();
@@ -289,7 +292,134 @@ async function finishSession(session) {
 
   log(`Sessão finalizada. Duração total: ${formatDuration(summary.totalMs)}`);
   notify('Sessão concluída', `Duração total: ${formatDuration(summary.totalMs)}.`);
+  await armScheduler();
   return session;
+}
+
+/* ------------------------------------------------------------ */
+/* Repetição automática                                         */
+/* ------------------------------------------------------------ */
+
+/** Sorteia/define o intervalo de espera conforme as configurações. */
+function drawRepeatIntervalMs(settings) {
+  const r = settings.autoRepeat;
+  const minutes = r.mode === REPEAT_MODES.RANDOM ? randomBetween(r.min, r.max) : r.minutes;
+  return minutesToMs(Math.max(1, minutes));
+}
+
+/**
+ * Chamado ao fim de cada sessão. Se a repetição estiver ativa e
+ * habilitada nas configurações, agenda a próxima sessão automática.
+ */
+async function armScheduler() {
+  const scheduler = await storage.getScheduler();
+  if (!scheduler.active) return;
+  const settings = await storage.getSettings();
+  if (!settings.autoRepeat.enabled) {
+    await stopScheduler('desabilitada nas configurações');
+    return;
+  }
+  const intervalMs = drawRepeatIntervalMs(settings);
+  scheduler.intervalMs = intervalMs;
+  scheduler.nextRunAt = Date.now() + intervalMs;
+  scheduler.profileId = await storage.getActiveProfileId();
+  await storage.saveScheduler(scheduler);
+  await scheduleAlarm(ALARMS.AUTO_NEXT, scheduler.nextRunAt);
+  log(`Próxima sessão automática em ${formatDuration(intervalMs)}`);
+  notify('Repetição automática', `Próxima sessão em ${formatDuration(intervalMs)}.`);
+}
+
+async function stopScheduler(reason) {
+  const scheduler = await storage.getScheduler();
+  scheduler.active = false;
+  scheduler.nextRunAt = null;
+  await storage.saveScheduler(scheduler);
+  try {
+    await chrome.alarms.clear(ALARMS.AUTO_NEXT);
+  } catch (err) {
+    warn('Falha ao limpar alarme de repetição', err);
+  }
+  log(`Repetição automática parada${reason ? ` (${reason})` : ''}`);
+  return scheduler;
+}
+
+/**
+ * Sincroniza o agendador com as configurações: ativa quando há sessão em
+ * andamento e a repetição está habilitada; desativa se foi desabilitada.
+ */
+async function syncScheduler() {
+  const settings = await storage.getSettings();
+  const scheduler = await storage.getScheduler();
+  if (!settings.autoRepeat.enabled) {
+    if (scheduler.active) await stopScheduler('desabilitada nas configurações');
+    return storage.getScheduler();
+  }
+  const session = await storage.getSession();
+  const live = session && (session.status === SESSION_STATUS.RUNNING || session.status === SESSION_STATUS.PAUSED);
+  if (live && !scheduler.active) {
+    scheduler.active = true;
+    scheduler.nextRunAt = null;
+    scheduler.profileId = await storage.getActiveProfileId();
+    await storage.saveScheduler(scheduler);
+    log('Repetição automática ativada');
+  }
+  return storage.getScheduler();
+}
+
+/**
+ * Gera e inicia uma sessão automaticamente. Ignorado se houver sessão
+ * em andamento (a próxima será agendada quando ela terminar).
+ */
+async function runAutoSession() {
+  return mutateSession(async (current) => {
+    const scheduler = await storage.getScheduler();
+    if (!scheduler.active) return undefined;
+    if (current && (current.status === SESSION_STATUS.RUNNING || current.status === SESSION_STATUS.PAUSED)) {
+      log('Repetição: já existe sessão em andamento, aguardando terminar.');
+      return undefined;
+    }
+    const settings = await storage.getSettings();
+    if (!settings.autoRepeat.enabled) {
+      await stopScheduler('desabilitada nas configurações');
+      return undefined;
+    }
+    const validation = storage.validateSettings(settings);
+    if (!validation.valid) {
+      await stopScheduler('configurações inválidas');
+      notify('Repetição automática parada', validation.errors[0].message);
+      return undefined;
+    }
+    const profileId = await storage.getActiveProfileId();
+    const session = buildSession(validation.settings, profileId);
+    session.status = SESSION_STATUS.RUNNING;
+    session.startedAt = Date.now();
+    session.autoStarted = true;
+
+    scheduler.runs += 1;
+    scheduler.nextRunAt = null;
+    await storage.saveScheduler(scheduler);
+    try {
+      await chrome.alarms.clear(ALARMS.AUTO_NEXT);
+    } catch (_err) {
+      // ignorado
+    }
+
+    log(`Sessão automática #${scheduler.runs} iniciada:`, session.steps.map((s) => `${s.label} ${formatClock(s.durationMs)}`).join(', '));
+    notify('Sessão automática iniciada', `Sessão nº ${scheduler.runs} da repetição. Duração estimada: ${formatDuration(session.totalEstimatedMs)}.`);
+    return beginStep(session, 0);
+  });
+}
+
+/** Dispara a sessão automática se o horário agendado já passou. */
+async function checkScheduler() {
+  const scheduler = await storage.getScheduler();
+  if (!scheduler.active || !scheduler.nextRunAt) return;
+  if (Date.now() >= scheduler.nextRunAt - 200) {
+    await runAutoSession();
+    return;
+  }
+  const alarm = await chrome.alarms.get(ALARMS.AUTO_NEXT).catch(() => null);
+  if (!alarm) await scheduleAlarm(ALARMS.AUTO_NEXT, scheduler.nextRunAt);
 }
 
 /**
@@ -297,6 +427,7 @@ async function finishSession(session) {
  * Chamado por alarmes, timers locais, pelo popup e na restauração.
  */
 async function checkDeadlines() {
+  await checkScheduler();
   return mutateSession(async (session) => {
     if (!session || session.status !== SESSION_STATUS.RUNNING) return undefined;
     const now = Date.now();
@@ -357,7 +488,10 @@ async function startSession() {
     session.status = SESSION_STATUS.RUNNING;
     session.startedAt = Date.now();
     log('Sessão iniciada');
-    return beginStep(session, 0);
+    const started = await beginStep(session, 0);
+    await storage.saveSession(started);
+    await syncScheduler();
+    return started;
   });
 }
 
@@ -533,8 +667,24 @@ async function clearLoginWarning(tabId) {
 /* Restauração                                                  */
 /* ------------------------------------------------------------ */
 
+async function restoreScheduler(reason) {
+  const scheduler = await storage.getScheduler();
+  if (!scheduler.active || !scheduler.nextRunAt) return;
+  const now = Date.now();
+  if (scheduler.nextRunAt <= now - 2 * REPEAT_CATCHUP_MS) {
+    // O horário passou há mais de dois minutos (navegador fechado): dá um
+    // minuto para o usuário perceber (e parar, se quiser) antes de iniciar.
+    // Atrasos pequenos (service worker acordando) disparam imediatamente.
+    scheduler.nextRunAt = now + REPEAT_CATCHUP_MS;
+    await storage.saveScheduler(scheduler);
+    log(`Repetição vencida durante ${reason}; próxima sessão em 1 minuto.`);
+  }
+  await scheduleAlarm(ALARMS.AUTO_NEXT, scheduler.nextRunAt);
+}
+
 async function restoreSession(reason) {
   await storage.ensureInitialized();
+  await restoreScheduler(reason);
   const session = await storage.getSession();
   if (!session) {
     log(`Nenhuma sessão para restaurar (${reason}).`);
@@ -573,6 +723,10 @@ chrome.runtime.onStartup.addListener(() => {
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (!alarm || !Object.values(ALARMS).includes(alarm.name)) return;
   log('Alarme disparado:', alarm.name);
+  if (alarm.name === ALARMS.AUTO_NEXT) {
+    checkScheduler().catch((err) => error('Falha ao iniciar sessão automática', err));
+    return;
+  }
   checkDeadlines().catch((err) => error('Falha ao processar alarme', err));
 });
 
@@ -603,6 +757,15 @@ const handlers = {
   },
   'session:registerGoal': async (message) => registerGoal(message.goal),
   'session:reopenTab': reopenTab,
+  'scheduler:get': async () => storage.getScheduler(),
+  'scheduler:sync': syncScheduler,
+  'scheduler:stop': async () => stopScheduler('pedido do usuário'),
+  'scheduler:runNow': async () => {
+    const scheduler = await storage.getScheduler();
+    if (!scheduler.active) throw new Error('A repetição automática não está ativa.');
+    await runAutoSession();
+    return storage.getSession();
+  },
   'content:whoami': async (_message, sender) => ({ tabId: sender.tab ? sender.tab.id : null }),
   'content:loginRequired': async (_message, sender) => flagLoginRequired(sender.tab ? sender.tab.id : null),
   'content:loggedIn': async (_message, sender) => clearLoginWarning(sender.tab ? sender.tab.id : null),

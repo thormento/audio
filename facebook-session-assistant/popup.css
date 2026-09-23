@@ -133,6 +133,22 @@ main { padding: 12px 16px 18px; }
 
 .card.disabled .range-row, .card.disabled .drawn, .card.disabled .check-row, .card.disabled .weight-row { opacity: 0.45; }
 
+/* Faixa da repetição automática */
+.scheduler {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  background: #E9F7EE; border: 1px solid #BFE6CB; color: #1E6B35;
+  border-radius: 12px; padding: 10px 12px; margin-bottom: 12px; font-size: 13px;
+}
+.scheduler-text { display: flex; flex-direction: column; gap: 2px; }
+.scheduler-text span { font-variant-numeric: tabular-nums; }
+.scheduler-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.scheduler .btn-ghost { color: #1E6B35; }
+.card.disabled #repeat-config { opacity: 0.45; }
+.history-item .tag {
+  display: inline-block; background: var(--primary-soft); color: var(--primary-dark);
+  padding: 1px 6px; border-radius: 6px; font-size: 11px; font-weight: 700; margin-left: 6px;
+}
+
 /* Lista de seleção de atividades */
 .pill-muted { background: var(--bg); color: var(--muted); padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
 .checklist { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }

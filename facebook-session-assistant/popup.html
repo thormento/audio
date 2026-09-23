@@ -27,6 +27,16 @@
   </nav>
 
   <main id="main">
+    <div id="scheduler-banner" class="scheduler" hidden>
+      <div class="scheduler-text">
+        <strong>Repetição automática ativa</strong>
+        <span id="scheduler-detail"></span>
+      </div>
+      <div class="scheduler-actions">
+        <button type="button" class="btn btn-small btn-primary" id="btn-run-now">Iniciar agora</button>
+        <button type="button" class="btn btn-small btn-ghost" id="btn-stop-repeat">Parar</button>
+      </div>
+    </div>
 
     <!-- ======================= CONFIGURAÇÃO ======================= -->
     <section id="view-config" class="view" hidden>
@@ -94,6 +104,56 @@
             <input type="number" id="opt-pause-max" min="0" step="1" data-field="pauses.max">
           </label>
           <span class="unit">segundos</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h3>Repetir automaticamente</h3>
+            <p class="desc">Com o navegador aberto, ao terminar uma sessão a extensão espera o intervalo e inicia outra sozinha, com novos sorteios.</p>
+          </div>
+          <div class="toggle-wrap">
+            <div class="run-label">Ativo: <strong id="repeat-label">Não</strong></div>
+            <label class="switch" title="Repetir automaticamente">
+              <input type="checkbox" id="opt-repeat" data-field="autoRepeat.enabled">
+              <span></span>
+            </label>
+          </div>
+        </div>
+        <div id="repeat-config">
+          <div class="mode-switch" role="radiogroup">
+            <label class="mode-option">
+              <input type="radio" name="repeat-mode" value="fixed">
+              <span>A cada X minutos</span>
+            </label>
+            <label class="mode-option">
+              <input type="radio" name="repeat-mode" value="random">
+              <span>Intervalo aleatório</span>
+            </label>
+          </div>
+          <div id="repeat-fixed">
+            <div class="chips" id="repeat-presets"></div>
+            <div class="range-row single">
+              <label>
+                <span>Esperar entre uma sessão e a próxima</span>
+                <input type="number" min="1" step="1" data-field="autoRepeat.minutes">
+              </label>
+              <span class="unit">minutos</span>
+            </div>
+          </div>
+          <div id="repeat-random" class="range-row">
+            <label>
+              <span>Espera mínima</span>
+              <input type="number" min="1" step="1" data-field="autoRepeat.min">
+            </label>
+            <label>
+              <span>Espera máxima</span>
+              <input type="number" min="1" step="1" data-field="autoRepeat.max">
+            </label>
+            <span class="unit">minutos</span>
+          </div>
+          <p class="muted small hint">O intervalo conta a partir do fim da sessão anterior. A repetição começa quando você inicia uma sessão e continua até você clicar em "Parar".</p>
         </div>
       </div>
 

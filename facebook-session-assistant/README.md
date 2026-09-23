@@ -29,18 +29,19 @@ A extensão usa a conta do Facebook que já estiver autenticada no navegador. N�
    - **Sortear entre mín. e máx.**: cada atividade tem tempo mínimo e máximo (minutos) e a extensão sorteia um valor a cada sessão.
    - **Tempo total dividido**: escolha o tempo total da sessão (1, 2, 5, 10, 15, 20 min ou outro valor) e ajuste a **barra de participação** de cada atividade. Os minutos são divididos proporcionalmente e a prévia mostra quanto cada uma recebe. Participação 0% deixa a atividade de fora.
    Para as metas (Curtidas, Amigos) informe quantidade mínima e máxima.
-4. Ajuste as opções de sessão: **Embaralhar atividades** e **Pausa entre atividades** (segundos).
-5. Clique em **Salvar configurações**.
-6. Clique em **Gerar nova sessão**. A extensão define:
+4. **Repetir automaticamente** (opcional): ative o interruptor no card "Repetir automaticamente" e escolha **A cada X minutos** (atalhos de 15 min a 3h, ou outro valor) ou **Intervalo aleatório** entre um mínimo e um máximo. Com o navegador aberto, ao terminar uma sessão a extensão espera esse intervalo e gera e inicia outra sozinha, com novos sorteios, até você clicar em **Parar**.
+5. Ajuste as opções de sessão: **Embaralhar atividades** e **Pausa entre atividades** (segundos).
+6. Clique em **Salvar configurações**.
+7. Clique em **Gerar nova sessão**. A extensão define:
    - a duração de cada atividade (sorteada ou dividida pelo tempo total, conforme o modo);
    - a quantidade de cada meta;
    - a pausa entre cada etapa;
    - a ordem das etapas (se o embaralhamento estiver ativo).
-7. Revise os valores sorteados e clique em **Iniciar sessão**.
-8. A extensão abre a seção correspondente do Facebook e inicia o cronômetro. O popup pode ser fechado: a sessão continua no service worker.
-9. Use **Pausar / Continuar / Pular etapa / Finalizar** quando quiser.
-10. Ao curtir ou enviar uma solicitação manualmente, clique em **+ Registrar curtida** / **+ Registrar solicitação** (no popup ou no widget flutuante na página).
-11. Ao terminar, a extensão mostra o **resumo** e grava a sessão no **histórico** (últimos 30 registros).
+8. Revise os valores sorteados e clique em **Iniciar sessão**.
+9. A extensão abre a seção correspondente do Facebook e inicia o cronômetro. O popup pode ser fechado: a sessão continua no service worker.
+10. Use **Pausar / Continuar / Pular etapa / Finalizar** quando quiser.
+11. Ao curtir ou enviar uma solicitação manualmente, clique em **+ Registrar curtida** / **+ Registrar solicitação** (no popup ou no widget flutuante na página).
+12. Ao terminar, a extensão mostra o **resumo** e grava a sessão no **histórico** (últimos 30 registros).
 
 ### Atividades
 
@@ -95,6 +96,7 @@ facebook-session-assistant/
 - **Restauração.** Ao reiniciar o Chrome ou recarregar a extensão, `restoreSession()` lê a sessão salva, recria os alarmes e avança etapas cujo prazo venceu. Nunca inicia uma sessão nova sozinha.
 - **Fila de mutações.** Todas as alterações de sessão passam por uma fila serial, evitando condições de corrida entre alarme, popup e content script.
 - **Modo de tempo total.** `distributeTotalMinutes()` em `utils/session.js` divide o total em segundos pelos pesos (método do maior resto), de modo que a soma das etapas é exatamente o total escolhido. As pausas entre etapas ficam fora desse total.
+- **Repetição automática.** O agendador (`scheduler` no storage) é ativado quando você inicia uma sessão com a opção ligada. Ao fim de cada sessão (por tempo esgotado ou pelo botão Finalizar), o intervalo é definido (fixo ou sorteado), o alarme `fsa-auto-next` é criado e uma faixa verde no topo do painel mostra a contagem regressiva com os botões **Iniciar agora** e **Parar**. Sessões iniciadas assim aparecem no histórico com a marca "automática". Se o navegador for reaberto com o horário já vencido, a próxima sessão começa em 1 minuto. Se o alarme disparar com uma sessão manual em andamento, ele é ignorado e a próxima é agendada quando ela terminar.
 - **Perfis.** Três perfis (`Perfil 1/2/3`) com configurações independentes. Troque o perfil ativo na página de opções. A estrutura permite adicionar mais perfis depois.
 - **Rolagem do Feed.** O content script rola a página com distâncias, velocidades e pausas de leitura sorteadas, às vezes volta um pouco, e pausa por alguns segundos sempre que você usa mouse, teclado ou toque. Não há mecanismo de contorno de sistemas da plataforma.
 
@@ -109,6 +111,7 @@ facebook-session-assistant/
       "id": "profile-1",
       "name": "Perfil 1",
       "settings": {
+        "autoRepeat": { "enabled": false, "mode": "fixed", "minutes": 60, "min": 60, "max": 90 },
         "durationMode": "random",
         "totalMinutes": 10,
         "feed":    { "enabled": true, "min": 1, "max": 15, "weight": 30, "autoScroll": true },
@@ -149,7 +152,7 @@ facebook-session-assistant/
 |----------|---------------|
 | Aba da sessão fechada | Cronômetro continua; o painel mostra aviso e botão **Reabrir aba**. A próxima etapa abre em nova aba. |
 | Usuário não autenticado | O content script detecta a tela de login; painel e widget avisam; notificação é enviada. |
-| Navegador reiniciado | A sessão é restaurada com etapa, tempo, progresso e contadores. |
+| Navegador reiniciado | A sessão é restaurada com etapa, tempo, progresso e contadores. A repetição automática, se ativa, é rearmada. |
 | Service worker encerrado | Alarmes acordam o worker; o alarme de vigilância cobre atrasos. |
 | Dados corrompidos | Perfis, histórico e sessão inválidos são substituídos pelos padrões com aviso no console. |
 | Valores inválidos | Mínimo > máximo, negativos ou vazios são bloqueados com mensagem no formulário. Tempo máximo 0 é permitido e significa "não executar"; se todas as atividades marcadas estiverem em 0, o painel avisa. |

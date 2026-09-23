@@ -25,7 +25,8 @@ import {
   ACTIVITIES,
   GOALS,
   LIMITS,
-  DURATION_MODES
+  DURATION_MODES,
+  REPEAT_MODES
 } from './constants.js';
 import { log, warn, error } from './logger.js';
 
@@ -108,6 +109,16 @@ export function normalizeSettings(input) {
     ? source.durationMode
     : DEFAULT_SETTINGS.durationMode;
   result.totalMinutes = toNumber(source.totalMinutes, DEFAULT_SETTINGS.totalMinutes);
+
+  const rawRepeat = isPlainObject(source.autoRepeat) ? source.autoRepeat : {};
+  const repeatDefaults = DEFAULT_SETTINGS.autoRepeat;
+  result.autoRepeat = {
+    enabled: typeof rawRepeat.enabled === 'boolean' ? rawRepeat.enabled : repeatDefaults.enabled,
+    mode: Object.values(REPEAT_MODES).includes(rawRepeat.mode) ? rawRepeat.mode : repeatDefaults.mode,
+    minutes: toNumber(rawRepeat.minutes, repeatDefaults.minutes),
+    min: toNumber(rawRepeat.min, repeatDefaults.min),
+    max: toNumber(rawRepeat.max, repeatDefaults.max)
+  };
 
   const rawPauses = isPlainObject(source.pauses) ? source.pauses : {};
   result.pauses = {
@@ -194,6 +205,22 @@ export function validateSettings(settings) {
     unit: 'segundo(s)',
     requireWhenEnabled: true
   });
+
+  if (s.autoRepeat.enabled) {
+    const r = s.autoRepeat;
+    if (r.mode === REPEAT_MODES.FIXED) {
+      if (!Number.isInteger(r.minutes) || r.minutes < LIMITS.repeatMinutesMin || r.minutes > LIMITS.repeatMinutesMax) {
+        errors.push({ field: 'autoRepeat.minutes', message: `Repetição automática: informe um intervalo inteiro entre ${LIMITS.repeatMinutesMin} e ${LIMITS.repeatMinutesMax} minutos.` });
+      }
+    } else {
+      checkRange('autoRepeat', 'Repetição automática', { enabled: true, min: r.min, max: r.max }, {
+        minAllowed: LIMITS.repeatMinutesMin,
+        maxAllowed: LIMITS.repeatMinutesMax,
+        unit: 'minuto(s)',
+        requireWhenEnabled: true
+      });
+    }
+  }
 
   const anyActivity = ACTIVITIES.some((activity) => s[activity.key].enabled);
   if (!anyActivity) {
@@ -380,6 +407,29 @@ export async function saveSession(session) {
 
 export async function clearSession() {
   return write({ [STORAGE_KEYS.SESSION]: null });
+}
+
+/* ------------------------------------------------------------ */
+/* Agendador da repetição automática                            */
+/* ------------------------------------------------------------ */
+
+export const DEFAULT_SCHEDULER = { active: false, nextRunAt: null, intervalMs: 0, runs: 0, profileId: null };
+
+/** Estado do agendador (sempre normalizado). */
+export async function getScheduler() {
+  const data = await read(STORAGE_KEYS.SCHEDULER);
+  const raw = isPlainObject(data[STORAGE_KEYS.SCHEDULER]) ? data[STORAGE_KEYS.SCHEDULER] : {};
+  return {
+    active: raw.active === true,
+    nextRunAt: Number.isFinite(raw.nextRunAt) ? raw.nextRunAt : null,
+    intervalMs: Number.isFinite(raw.intervalMs) ? raw.intervalMs : 0,
+    runs: Number.isInteger(raw.runs) ? raw.runs : 0,
+    profileId: typeof raw.profileId === 'string' ? raw.profileId : null
+  };
+}
+
+export async function saveScheduler(scheduler) {
+  return write({ [STORAGE_KEYS.SCHEDULER]: { ...DEFAULT_SCHEDULER, ...(isPlainObject(scheduler) ? scheduler : {}) } });
 }
 
 /* ------------------------------------------------------------ */

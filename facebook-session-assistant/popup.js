@@ -18,7 +18,9 @@ import {
   STORAGE_KEYS,
   HISTORY_LIMIT,
   DURATION_MODES,
-  TOTAL_MINUTES_PRESETS
+  TOTAL_MINUTES_PRESETS,
+  REPEAT_MODES,
+  REPEAT_MINUTES_PRESETS
 } from './utils/constants.js';
 import * as storage from './utils/storage.js';
 import { getCurrentStep, getNextStep, stepRemainingMs, pauseRemainingMs, distributeTotalMinutes } from './utils/session.js';
@@ -30,6 +32,7 @@ const $ = (selector) => document.querySelector(selector);
 const state = {
   settings: null,
   session: null,
+  scheduler: null,
   history: [],
   profileName: '',
   view: 'panel',
@@ -191,7 +194,39 @@ function fillForm() {
   const modeInput = document.querySelector(`input[name="duration-mode"][value="${s.durationMode}"]`);
   if (modeInput) modeInput.checked = true;
   $('#opt-total-minutes').value = s.totalMinutes;
+  const repeatInput = document.querySelector(`input[name="repeat-mode"][value="${s.autoRepeat.mode}"]`);
+  if (repeatInput) repeatInput.checked = true;
   updateCardStates();
+}
+
+function buildRepeatPresets() {
+  const box = $('#repeat-presets');
+  box.innerHTML = REPEAT_MINUTES_PRESETS.map(
+    (m) => {
+      const hours = Math.floor(m / 60);
+      const rest = m % 60;
+      const label = hours > 0 ? `${hours}h${rest ? ` ${rest}min` : ''}` : `${m} min`;
+      return `<button type="button" class="chip" data-repeat-preset="${m}">${label}</button>`;
+    }
+  ).join('');
+}
+
+function currentRepeatMode() {
+  const checked = document.querySelector('input[name="repeat-mode"]:checked');
+  return checked ? checked.value : REPEAT_MODES.FIXED;
+}
+
+function updateRepeatStates() {
+  const enabled = $('#opt-repeat').checked;
+  const fixed = currentRepeatMode() === REPEAT_MODES.FIXED;
+  $('#repeat-label').textContent = enabled ? 'Sim' : 'Não';
+  $('#opt-repeat').closest('.card').classList.toggle('disabled', !enabled);
+  $('#repeat-fixed').hidden = !fixed;
+  $('#repeat-random').hidden = fixed;
+  const minutes = Number(document.querySelector('[data-field="autoRepeat.minutes"]').value);
+  document.querySelectorAll('.chip[data-repeat-preset]').forEach((chip) => {
+    chip.classList.toggle('active', Number(chip.dataset.repeatPreset) === minutes);
+  });
 }
 
 function buildActivityChecklist() {
@@ -273,7 +308,8 @@ function readForm() {
     shuffle: $('#opt-shuffle').checked,
     pauses: { enabled: $('#opt-pauses').checked },
     durationMode: currentMode(),
-    totalMinutes: totalRaw === '' ? NaN : Number(totalRaw)
+    totalMinutes: totalRaw === '' ? NaN : Number(totalRaw),
+    autoRepeat: { mode: currentRepeatMode() }
   };
   document.querySelectorAll('[data-field]').forEach((input) => {
     const [group, field] = input.dataset.field.split('.');
@@ -325,8 +361,43 @@ async function saveSettingsFromForm({ silent = false } = {}) {
   showErrors([]);
   state.settings = result.settings;
   fillForm();
+  try {
+    state.scheduler = await send('scheduler:sync');
+    renderScheduler();
+  } catch (err) {
+    error('Falha ao sincronizar repetição', err);
+  }
   if (!silent) toast('Configurações salvas.', 'success');
   return true;
+}
+
+/* ------------------------------------------------------------ */
+/* Faixa da repetição automática                                */
+/* ------------------------------------------------------------ */
+
+function renderScheduler() {
+  const banner = $('#scheduler-banner');
+  const sch = state.scheduler;
+  if (!sch || !sch.active) {
+    banner.hidden = true;
+    return;
+  }
+  const session = state.session;
+  const live = session && (session.status === SESSION_STATUS.RUNNING || session.status === SESSION_STATUS.PAUSED);
+  const detail = $('#scheduler-detail');
+  if (live) {
+    detail.textContent = `Sessão nº ${sch.runs + 1} em andamento. A próxima será agendada ao terminar.`;
+    $('#btn-run-now').hidden = true;
+  } else if (sch.nextRunAt) {
+    const remaining = Math.max(0, sch.nextRunAt - Date.now());
+    detail.textContent = `Próxima sessão em ${formatClock(remaining)} (intervalo de ${formatDuration(sch.intervalMs)}).`;
+    $('#btn-run-now').hidden = false;
+    if (remaining === 0) maybeRequestCheck(0, false);
+  } else {
+    detail.textContent = 'Aguardando o fim da sessão atual.';
+    $('#btn-run-now').hidden = true;
+  }
+  banner.hidden = false;
 }
 
 /** Mostra os valores sorteados da sessão atual nos cards. */
@@ -517,7 +588,7 @@ function renderHistory() {
       return `
         <div class="history-item">
           <div class="title">
-            <span>${formatDate(entry.date)} · ${formatTime(entry.startedAt)}–${formatTime(entry.endedAt)}</span>
+            <span>${formatDate(entry.date)} · ${formatTime(entry.startedAt)}–${formatTime(entry.endedAt)}${entry.auto ? '<span class="tag">automática</span>' : ''}</span>
             <span>${formatDuration(entry.durationMs)}</span>
           </div>
           <div class="details">
@@ -544,6 +615,7 @@ function render() {
   const status = session ? session.status : SESSION_STATUS.IDLE;
   setStatus(status);
   renderDrawnValues();
+  renderScheduler();
 
   const showConfig = state.view === 'panel' && (!session || status === SESSION_STATUS.IDLE);
   const showSession = state.view === 'panel' && session && status !== SESSION_STATUS.IDLE;
@@ -596,6 +668,28 @@ function bindEvents() {
     if (toggle) toggle.checked = check.checked;
     updateCardStates();
   });
+  $('#repeat-presets').addEventListener('click', (event) => {
+    const chip = event.target.closest('[data-repeat-preset]');
+    if (!chip) return;
+    document.querySelector('[data-field="autoRepeat.minutes"]').value = chip.dataset.repeatPreset;
+    updateRepeatStates();
+  });
+  $('#view-config').addEventListener('change', (event) => {
+    if (event.target.matches('input[name="repeat-mode"], #opt-repeat')) updateRepeatStates();
+  });
+  $('#view-config').addEventListener('input', (event) => {
+    if (event.target.matches('[data-field="autoRepeat.minutes"]')) updateRepeatStates();
+  });
+  $('#btn-stop-repeat').addEventListener('click', async () => {
+    try {
+      state.scheduler = await send('scheduler:stop');
+      renderScheduler();
+      toast('Repetição automática parada.', 'success');
+    } catch (err) {
+      toast(err.message, 'error');
+    }
+  });
+  $('#btn-run-now').addEventListener('click', () => runCommand('scheduler:runNow'));
   $('#total-presets').addEventListener('click', (event) => {
     const chip = event.target.closest('[data-preset]');
     if (!chip) return;
@@ -642,6 +736,10 @@ function bindEvents() {
       state.session = changes[STORAGE_KEYS.SESSION].newValue || null;
       render();
     }
+    if (changes[STORAGE_KEYS.SCHEDULER]) {
+      state.scheduler = changes[STORAGE_KEYS.SCHEDULER].newValue || null;
+      renderScheduler();
+    }
     if (changes[STORAGE_KEYS.HISTORY]) {
       state.history = changes[STORAGE_KEYS.HISTORY].newValue || [];
       if (state.view === 'history') render();
@@ -659,6 +757,7 @@ function bindEvents() {
     if (s && (s.status === SESSION_STATUS.RUNNING || s.status === SESSION_STATUS.PAUSED) && state.view === 'panel') {
       renderLiveTimers(s);
     }
+    if (state.scheduler && state.scheduler.active) renderScheduler();
   }, 1000);
 }
 
@@ -690,11 +789,13 @@ async function init() {
   buildGoalCards();
   buildActivityChecklist();
   buildTotalPresets();
+  buildRepeatPresets();
   bindEvents();
   try {
     await loadSettings();
     fillForm();
     state.session = await storage.getSession();
+    state.scheduler = await storage.getScheduler();
     state.history = await storage.getHistory();
     // Pede ao service worker uma verificação: acorda-o e sincroniza prazos.
     send('session:check')

@@ -233,6 +233,7 @@ export function summaryToHistoryEntry(session, summary) {
     endedAt: summary.endedAt,
     durationMs: summary.totalMs,
     activities: summary.activities,
+    auto: Boolean(session.autoStarted),
     likes: summary.goals.likes ? summary.goals.likes.done : 0,
     friends: summary.goals.friends ? summary.goals.friends.done : 0,
     stepsCompleted: summary.stepsCompleted,
