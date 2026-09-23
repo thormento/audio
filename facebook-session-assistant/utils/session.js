@@ -8,7 +8,7 @@
  * {
  *   id, profileId, status, phase,
  *   createdAt, startedAt, endedAt,
- *   steps: [{ key, label, url, durationMs, drawnMinutes, elapsedMs,
+ *   steps: [{ key, label, url, durationMs, elapsedMs,
  *             remainingMs, status, startedAt, endedAt, segmentStart,
  *             deadline, pauseAfterMs, autoScroll }],
  *   currentIndex,
@@ -19,29 +19,72 @@
  * }
  */
 
-import { ACTIVITIES, GOALS, SESSION_STATUS, PHASE, STEP_STATUS } from './constants.js';
+import { ACTIVITIES, GOALS, SESSION_STATUS, PHASE, STEP_STATUS, DURATION_MODES } from './constants.js';
 import { randomBetween, shuffle } from './random.js';
 import { minutesToMs, secondsToMs } from './timer.js';
 
 /**
- * Sorteia durações, quantidades, pausas e ordem a partir das
- * configurações já validadas. Lança erro se nenhuma atividade
- * estiver ativa.
+ * Divide um tempo total (minutos) entre as atividades ativas conforme
+ * o peso de cada uma. Retorna { key: durationMs }. A soma das partes é
+ * exatamente o total (distribuição por maior resto, em segundos).
+ * Atividades desativadas ou com peso zero não recebem tempo.
+ */
+export function distributeTotalMinutes(settings) {
+  const totalSeconds = Math.max(0, Math.round(Number(settings.totalMinutes) || 0)) * 60;
+  const entries = ACTIVITIES.filter((a) => {
+    const cfg = settings[a.key];
+    return cfg && cfg.enabled && Number(cfg.weight) > 0;
+  }).map((a) => ({ key: a.key, weight: Number(settings[a.key].weight) }));
+
+  const result = {};
+  const sum = entries.reduce((acc, e) => acc + e.weight, 0);
+  if (!entries.length || sum <= 0 || totalSeconds <= 0) return result;
+
+  let assigned = 0;
+  const parts = entries.map((e) => {
+    const exact = (totalSeconds * e.weight) / sum;
+    const base = Math.floor(exact);
+    assigned += base;
+    return { key: e.key, base, fraction: exact - base };
+  });
+  let remainder = totalSeconds - assigned;
+  parts.sort((a, b) => b.fraction - a.fraction);
+  for (let i = 0; remainder > 0; i = (i + 1) % parts.length) {
+    parts[i].base += 1;
+    remainder -= 1;
+  }
+  parts.forEach((p) => {
+    result[p.key] = p.base * 1000;
+  });
+  return result;
+}
+
+/**
+ * Cria a sessão a partir das configurações já validadas:
+ *  - modo "random": sorteia minutos entre mínimo e máximo;
+ *  - modo "total": divide o tempo total pelos pesos escolhidos.
+ * Também sorteia metas, pausas e (se habilitado) a ordem.
+ * Lança erro se nenhuma atividade estiver ativa.
  */
 export function buildSession(settings, profileId) {
   const now = Date.now();
+  const totalMode = settings.durationMode === DURATION_MODES.TOTAL;
+  const distributed = totalMode ? distributeTotalMinutes(settings) : {};
 
-  let steps = ACTIVITIES.filter((activity) => settings[activity.key] && settings[activity.key].enabled).map(
+  let steps = ACTIVITIES.filter((activity) => {
+    const cfg = settings[activity.key];
+    if (!cfg || !cfg.enabled) return false;
+    if (totalMode) return Boolean(distributed[activity.key]);
+    return true;
+  }).map(
     (activity) => {
       const cfg = settings[activity.key];
-      const drawnMinutes = randomBetween(cfg.min, cfg.max);
-      const durationMs = minutesToMs(drawnMinutes);
+      const durationMs = totalMode ? distributed[activity.key] : minutesToMs(randomBetween(cfg.min, cfg.max));
       return {
         key: activity.key,
         label: activity.label,
         url: activity.url,
         durationMs,
-        drawnMinutes,
         elapsedMs: 0,
         remainingMs: durationMs,
         status: STEP_STATUS.PENDING,
@@ -56,7 +99,11 @@ export function buildSession(settings, profileId) {
   );
 
   if (steps.length === 0) {
-    throw new Error('Ative pelo menos uma atividade antes de gerar a sessão.');
+    throw new Error(
+      totalMode
+        ? 'Nenhuma atividade recebeu tempo. Ative pelo menos uma atividade com participação maior que zero.'
+        : 'Ative pelo menos uma atividade antes de gerar a sessão.'
+    );
   }
 
   if (settings.shuffle) steps = shuffle(steps);
@@ -96,6 +143,8 @@ export function buildSession(settings, profileId) {
     currentIndex: -1,
     goals,
     shuffle: Boolean(settings.shuffle),
+    durationMode: totalMode ? DURATION_MODES.TOTAL : DURATION_MODES.RANDOM,
+    totalMinutes: totalMode ? Number(settings.totalMinutes) : null,
     pausesEnabled,
     totalEstimatedMs,
     tabId: null,

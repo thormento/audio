@@ -35,6 +35,32 @@
         <strong id="profile-name">Perfil 1</strong>
       </div>
 
+      <div class="card">
+        <h3>Duração das atividades</h3>
+        <div class="mode-switch" role="radiogroup">
+          <label class="mode-option">
+            <input type="radio" name="duration-mode" value="random">
+            <span>Sortear entre mín. e máx.</span>
+          </label>
+          <label class="mode-option">
+            <input type="radio" name="duration-mode" value="total">
+            <span>Tempo total dividido</span>
+          </label>
+        </div>
+        <div id="total-config" hidden>
+          <p class="muted small">Escolha o tempo total e ajuste a fatia de cada atividade nas barras abaixo.</p>
+          <div class="chips" id="total-presets"></div>
+          <div class="range-row single">
+            <label>
+              <span>Outro valor</span>
+              <input type="number" id="opt-total-minutes" min="1" step="1" data-simple="totalMinutes">
+            </label>
+            <span class="unit">minutos</span>
+          </div>
+          <div class="distribution" id="distribution-preview"></div>
+        </div>
+      </div>
+
       <div id="activity-cards"></div>
       <div id="goal-cards"></div>
 
@@ -81,6 +107,7 @@
         <div class="card">
           <h3>Sessão gerada</h3>
           <p class="muted">Tempo total estimado: <strong id="ready-total"></strong></p>
+          <p class="muted small" id="ready-mode"></p>
           <ol class="step-list" id="ready-steps"></ol>
           <div class="goal-summary" id="ready-goals"></div>
         </div>

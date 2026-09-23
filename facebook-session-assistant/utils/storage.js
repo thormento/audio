@@ -24,7 +24,8 @@ import {
   DEFAULT_PROFILE_IDS,
   ACTIVITIES,
   GOALS,
-  LIMITS
+  LIMITS,
+  DURATION_MODES
 } from './constants.js';
 import { log, warn, error } from './logger.js';
 
@@ -83,7 +84,8 @@ export function normalizeSettings(input) {
     result[activity.key] = {
       enabled: typeof raw.enabled === 'boolean' ? raw.enabled : defaults.enabled,
       min: toNumber(raw.min, defaults.min),
-      max: toNumber(raw.max, defaults.max)
+      max: toNumber(raw.max, defaults.max),
+      weight: toNumber(raw.weight, defaults.weight)
     };
     if (activity.supportsAutoScroll) {
       result[activity.key].autoScroll =
@@ -102,6 +104,10 @@ export function normalizeSettings(input) {
   });
 
   result.shuffle = typeof source.shuffle === 'boolean' ? source.shuffle : DEFAULT_SETTINGS.shuffle;
+  result.durationMode = Object.values(DURATION_MODES).includes(source.durationMode)
+    ? source.durationMode
+    : DEFAULT_SETTINGS.durationMode;
+  result.totalMinutes = toNumber(source.totalMinutes, DEFAULT_SETTINGS.totalMinutes);
 
   const rawPauses = isPlainObject(source.pauses) ? source.pauses : {};
   result.pauses = {
@@ -144,14 +150,34 @@ export function validateSettings(settings) {
     }
   };
 
+  const totalMode = s.durationMode === DURATION_MODES.TOTAL;
+
   ACTIVITIES.forEach((activity) => {
-    checkRange(activity.key, activity.label, s[activity.key], {
+    const cfg = s[activity.key];
+    if (totalMode) {
+      if (!cfg.enabled) return;
+      if (!Number.isFinite(cfg.weight) || cfg.weight < LIMITS.weightMin || cfg.weight > LIMITS.weightMax) {
+        errors.push({ field: `${activity.key}.weight`, message: `${activity.label}: a participação deve ficar entre ${LIMITS.weightMin} e ${LIMITS.weightMax}.` });
+      }
+      return;
+    }
+    checkRange(activity.key, activity.label, cfg, {
       minAllowed: LIMITS.activityMinutesMin,
       maxAllowed: LIMITS.activityMinutesMax,
       unit: 'minuto(s)',
       requireWhenEnabled: true
     });
   });
+
+  if (totalMode) {
+    if (!Number.isInteger(s.totalMinutes) || s.totalMinutes < LIMITS.totalMinutesMin || s.totalMinutes > LIMITS.totalMinutesMax) {
+      errors.push({ field: 'totalMinutes', message: `Tempo total: informe um número inteiro entre ${LIMITS.totalMinutesMin} e ${LIMITS.totalMinutesMax} minutos.` });
+    }
+    const anyWeight = ACTIVITIES.some((a) => s[a.key].enabled && s[a.key].weight > 0);
+    if (!anyWeight) {
+      errors.push({ field: 'activities', message: 'No modo de tempo total, pelo menos uma atividade ativa precisa ter participação maior que zero.' });
+    }
+  }
 
   GOALS.forEach((goal) => {
     checkRange(goal.key, goal.label, s[goal.key], {

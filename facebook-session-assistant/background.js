@@ -32,7 +32,7 @@ import {
   computeSummary,
   summaryToHistoryEntry
 } from './utils/session.js';
-import { formatClock, formatDuration, formatMinutesLabel } from './utils/timer.js';
+import { formatClock, formatDuration } from './utils/timer.js';
 import { log, warn, error, initLogger } from './utils/logger.js';
 
 initLogger();
@@ -213,7 +213,7 @@ async function beginStep(session, index) {
   await scheduleAlarm(ALARMS.STEP_END, step.deadline);
   await startWatchdog();
 
-  log(`Etapa ${step.label} iniciada (${formatMinutesLabel(step.drawnMinutes)})`);
+  log(`Etapa ${step.label} iniciada (${formatClock(step.durationMs)})`);
   notify(`${step.label} iniciado`, `Tempo sorteado: ${formatClock(step.durationMs)}.`);
   return session;
 }
@@ -342,7 +342,7 @@ async function generateSession() {
     if (!validation.valid) throw new Error(validation.errors[0].message);
     const profileId = await storage.getActiveProfileId();
     const session = buildSession(validation.settings, profileId);
-    log('Nova sessão gerada:', session.steps.map((s) => `${s.label} ${s.drawnMinutes}min`).join(', '));
+    log('Nova sessão gerada:', session.steps.map((s) => `${s.label} ${formatClock(s.durationMs)}`).join(', '));
     return session;
   });
 }

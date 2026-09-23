@@ -16,10 +16,12 @@ import {
   STEP_STATUS,
   STATUS_LABELS,
   STORAGE_KEYS,
-  HISTORY_LIMIT
+  HISTORY_LIMIT,
+  DURATION_MODES,
+  TOTAL_MINUTES_PRESETS
 } from './utils/constants.js';
 import * as storage from './utils/storage.js';
-import { getCurrentStep, getNextStep, stepRemainingMs, pauseRemainingMs } from './utils/session.js';
+import { getCurrentStep, getNextStep, stepRemainingMs, pauseRemainingMs, distributeTotalMinutes } from './utils/session.js';
 import { formatClock, formatDuration, formatDate, formatTime, formatMinutesShort, progress } from './utils/timer.js';
 import { log, error, initLogger } from './utils/logger.js';
 
@@ -118,17 +120,24 @@ function buildActivityCards() {
           <span></span>
         </label>
       </div>
-      <div class="range-row">
+      <div class="range-row mode-random">
         <label><span>Tempo mínimo</span><input type="number" min="1" step="1" data-field="${activity.key}.min"></label>
         <label><span>Tempo máximo</span><input type="number" min="1" step="1" data-field="${activity.key}.max"></label>
         <span class="unit">${activity.unit}</span>
+      </div>
+      <div class="weight-row mode-total">
+        <div class="weight-head">
+          <span>Participação: <strong data-weight-label="${activity.key}">0%</strong></span>
+          <span>≈ <strong data-weight-time="${activity.key}">00:00</strong></span>
+        </div>
+        <input type="range" min="0" max="100" step="5" data-field="${activity.key}.weight">
       </div>
       ${
         activity.supportsAutoScroll
           ? `<label class="check-row sub"><input type="checkbox" data-field="${activity.key}.autoScroll"><span>Rolagem automática com pausas variáveis</span></label>`
           : ''
       }
-      <div class="drawn">Sorteado para a sessão atual: <strong data-drawn="${activity.key}">—</strong></div>
+      <div class="drawn">Nesta sessão: <strong data-drawn="${activity.key}">—</strong></div>
     `;
     container.appendChild(card);
   });
@@ -176,12 +185,71 @@ function fillForm() {
   });
   $('#opt-shuffle').checked = Boolean(s.shuffle);
   $('#opt-pauses').checked = Boolean(s.pauses.enabled);
+  const modeInput = document.querySelector(`input[name="duration-mode"][value="${s.durationMode}"]`);
+  if (modeInput) modeInput.checked = true;
+  $('#opt-total-minutes').value = s.totalMinutes;
   updateCardStates();
+}
+
+function buildTotalPresets() {
+  const box = $('#total-presets');
+  box.innerHTML = TOTAL_MINUTES_PRESETS.map((m) => `<button type="button" class="chip" data-preset="${m}">${m} min</button>`).join('');
+}
+
+function currentMode() {
+  const checked = document.querySelector('input[name="duration-mode"]:checked');
+  return checked ? checked.value : DURATION_MODES.RANDOM;
+}
+
+const DIST_COLORS = { feed: '#1877F2', reels: '#E1306C', videos: '#31A24C', lives: '#F7B928', games: '#8E44AD' };
+
+/** Atualiza a prévia da divisão do tempo total e os rótulos das barras. */
+function updateDistributionPreview() {
+  const form = readForm();
+  const distributed = distributeTotalMinutes(form);
+  const totalSeconds = Math.max(0, Math.round(Number(form.totalMinutes) || 0)) * 60;
+
+  document.querySelectorAll('[data-weight-label]').forEach((el) => {
+    const key = el.dataset.weightLabel;
+    const cfg = form[key] || {};
+    el.textContent = `${Number(cfg.weight) || 0}%`;
+  });
+  document.querySelectorAll('[data-weight-time]').forEach((el) => {
+    el.textContent = formatClock(distributed[el.dataset.weightTime] || 0);
+  });
+
+  document.querySelectorAll('.chip[data-preset]').forEach((chip) => {
+    chip.classList.toggle('active', Number(chip.dataset.preset) === Number(form.totalMinutes));
+  });
+
+  const preview = $('#distribution-preview');
+  const parts = ACTIVITIES.filter((a) => distributed[a.key]);
+  if (!parts.length || totalSeconds <= 0) {
+    preview.innerHTML = '<p class="muted small">Nenhuma atividade recebe tempo. Ative uma atividade e aumente a participação.</p>';
+    return;
+  }
+  const bar = parts
+    .map((a) => `<span style="width:${(distributed[a.key] / 1000 / totalSeconds) * 100}%;background:${DIST_COLORS[a.key] || '#999'}"></span>`)
+    .join('');
+  const legend = parts
+    .map((a) => `<span><i style="background:${DIST_COLORS[a.key] || '#999'}"></i>${a.label} ${formatClock(distributed[a.key])}</span>`)
+    .join('');
+  preview.innerHTML = `
+    <div class="dist-bar">${bar}</div>
+    <div class="dist-legend">${legend}</div>
+    <div class="dist-total">Total das atividades: ${formatClock(totalSeconds * 1000)} (pausas entre etapas não entram nesse total).</div>
+  `;
 }
 
 /** Lê o formulário para um objeto de configurações (sem validar). */
 function readForm() {
-  const result = { shuffle: $('#opt-shuffle').checked, pauses: { enabled: $('#opt-pauses').checked } };
+  const totalRaw = $('#opt-total-minutes').value;
+  const result = {
+    shuffle: $('#opt-shuffle').checked,
+    pauses: { enabled: $('#opt-pauses').checked },
+    durationMode: currentMode(),
+    totalMinutes: totalRaw === '' ? NaN : Number(totalRaw)
+  };
   document.querySelectorAll('[data-field]').forEach((input) => {
     const [group, field] = input.dataset.field.split('.');
     if (!result[group]) result[group] = {};
@@ -197,11 +265,16 @@ function updateCardStates() {
     card.classList.toggle('disabled', toggle && !toggle.checked);
   });
   $('#pause-range').style.opacity = $('#opt-pauses').checked ? '1' : '0.45';
+  const totalMode = currentMode() === DURATION_MODES.TOTAL;
+  $('#total-config').hidden = !totalMode;
+  document.querySelectorAll('.mode-random').forEach((el) => { el.hidden = totalMode; });
+  document.querySelectorAll('.mode-total').forEach((el) => { el.hidden = !totalMode; });
+  if (totalMode) updateDistributionPreview();
 }
 
 function showErrors(errors) {
   const box = $('#form-errors');
-  document.querySelectorAll('[data-field]').forEach((input) => input.classList.remove('invalid'));
+  document.querySelectorAll('[data-field], #opt-total-minutes').forEach((input) => input.classList.remove('invalid'));
   if (!errors || !errors.length) {
     box.hidden = true;
     box.innerHTML = '';
@@ -210,7 +283,7 @@ function showErrors(errors) {
   box.innerHTML = `<ul>${errors.map((e) => `<li>${escapeHtml(e.message)}</li>`).join('')}</ul>`;
   box.hidden = false;
   errors.forEach((e) => {
-    const input = document.querySelector(`[data-field="${e.field}"]`);
+    const input = e.field === 'totalMinutes' ? $('#opt-total-minutes') : document.querySelector(`[data-field="${e.field}"]`);
     if (input) input.classList.add('invalid');
   });
 }
@@ -239,7 +312,7 @@ function renderDrawnValues() {
   if (!session) return;
   session.steps.forEach((step) => {
     const el = document.querySelector(`[data-drawn="${step.key}"]`);
-    if (el) el.textContent = `${step.drawnMinutes} min`;
+    if (el) el.textContent = formatClock(step.durationMs);
   });
   GOALS.forEach((goal) => {
     const g = session.goals[goal.key];
@@ -254,12 +327,16 @@ function renderDrawnValues() {
 
 function renderReady(session) {
   $('#ready-total').textContent = formatDuration(session.totalEstimatedMs);
+  $('#ready-mode').textContent =
+    session.durationMode === DURATION_MODES.TOTAL
+      ? `Tempo total escolhido: ${session.totalMinutes} min, dividido pelas participações.`
+      : 'Durações sorteadas entre mínimo e máximo.';
   const list = $('#ready-steps');
   list.innerHTML = session.steps
     .map(
       (step) => `
       <li>
-        <span>${escapeHtml(step.label)} — <strong>${step.drawnMinutes} min</strong></span>
+        <span>${escapeHtml(step.label)} — <strong>${formatClock(step.durationMs)}</strong></span>
         ${step.pauseAfterMs > 0 ? `<span class="pause">pausa ${formatClock(step.pauseAfterMs)}</span>` : ''}
       </li>`
     )
@@ -472,7 +549,17 @@ function bindEvents() {
   $('#open-options').addEventListener('click', () => chrome.runtime.openOptionsPage());
 
   $('#view-config').addEventListener('change', (event) => {
-    if (event.target.matches('input[type="checkbox"]')) updateCardStates();
+    if (event.target.matches('input[type="checkbox"], input[name="duration-mode"]')) updateCardStates();
+    if (event.target.matches('#opt-total-minutes')) updateDistributionPreview();
+  });
+  $('#view-config').addEventListener('input', (event) => {
+    if (event.target.matches('input[type="range"], #opt-total-minutes')) updateDistributionPreview();
+  });
+  $('#total-presets').addEventListener('click', (event) => {
+    const chip = event.target.closest('[data-preset]');
+    if (!chip) return;
+    $('#opt-total-minutes').value = chip.dataset.preset;
+    updateDistributionPreview();
   });
 
   $('#btn-save').addEventListener('click', () => saveSettingsFromForm());
@@ -560,6 +647,7 @@ async function init() {
   $('#app-name').textContent = APP_NAME;
   buildActivityCards();
   buildGoalCards();
+  buildTotalPresets();
   bindEvents();
   try {
     await loadSettings();

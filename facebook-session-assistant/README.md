@@ -24,11 +24,14 @@ A extensão usa a conta do Facebook que já estiver autenticada no navegador. N�
 ## Como usar
 
 1. **Abra o painel** clicando no ícone da extensão.
-2. **Configure cada atividade**: ative/desative, informe tempo mínimo e máximo (minutos). Para as metas (Curtidas, Amigos) informe quantidade mínima e máxima.
+2. **Escolha o modo de duração** no card "Duração das atividades":
+   - **Sortear entre mín. e máx.**: cada atividade tem tempo mínimo e máximo (minutos) e a extensão sorteia um valor a cada sessão.
+   - **Tempo total dividido**: escolha o tempo total da sessão (1, 2, 5, 10, 15, 20 min ou outro valor) e ajuste a **barra de participação** de cada atividade. Os minutos são divididos proporcionalmente e a prévia mostra quanto cada uma recebe. Participação 0% deixa a atividade de fora.
+   Ative/desative cada atividade pelo interruptor. Para as metas (Curtidas, Amigos) informe quantidade mínima e máxima.
 3. Ajuste as opções de sessão: **Embaralhar atividades** e **Pausa entre atividades** (segundos).
 4. Clique em **Salvar configurações**.
-5. Clique em **Gerar nova sessão**. A extensão sorteia:
-   - a duração de cada atividade;
+5. Clique em **Gerar nova sessão**. A extensão define:
+   - a duração de cada atividade (sorteada ou dividida pelo tempo total, conforme o modo);
    - a quantidade de cada meta;
    - a pausa entre cada etapa;
    - a ordem das etapas (se o embaralhamento estiver ativo).
@@ -90,6 +93,7 @@ facebook-session-assistant/
 - **chrome.alarms.** Um alarme é criado para o fim de cada etapa (`fsa-step-end`) e de cada pausa (`fsa-pause-end`). Um alarme periódico de vigilância (`fsa-watchdog`, a cada 30 s) confere se algum prazo venceu, caso o service worker tenha sido encerrado. Timers locais complementam a precisão enquanto o worker está vivo.
 - **Restauração.** Ao reiniciar o Chrome ou recarregar a extensão, `restoreSession()` lê a sessão salva, recria os alarmes e avança etapas cujo prazo venceu. Nunca inicia uma sessão nova sozinha.
 - **Fila de mutações.** Todas as alterações de sessão passam por uma fila serial, evitando condições de corrida entre alarme, popup e content script.
+- **Modo de tempo total.** `distributeTotalMinutes()` em `utils/session.js` divide o total em segundos pelos pesos (método do maior resto), de modo que a soma das etapas é exatamente o total escolhido. As pausas entre etapas ficam fora desse total.
 - **Perfis.** Três perfis (`Perfil 1/2/3`) com configurações independentes. Troque o perfil ativo na página de opções. A estrutura permite adicionar mais perfis depois.
 - **Rolagem do Feed.** O content script rola a página com distâncias, velocidades e pausas de leitura sorteadas, às vezes volta um pouco, e pausa por alguns segundos sempre que você usa mouse, teclado ou toque. Não há mecanismo de contorno de sistemas da plataforma.
 
@@ -104,11 +108,13 @@ facebook-session-assistant/
       "id": "profile-1",
       "name": "Perfil 1",
       "settings": {
-        "feed":    { "enabled": true, "min": 1, "max": 15, "autoScroll": true },
-        "reels":   { "enabled": true, "min": 2, "max": 10 },
-        "videos":  { "enabled": true, "min": 2, "max": 8 },
-        "lives":   { "enabled": true, "min": 3, "max": 10 },
-        "games":   { "enabled": true, "min": 2, "max": 5 },
+        "durationMode": "random",
+        "totalMinutes": 10,
+        "feed":    { "enabled": true, "min": 1, "max": 15, "weight": 30, "autoScroll": true },
+        "reels":   { "enabled": true, "min": 2, "max": 10, "weight": 25 },
+        "videos":  { "enabled": true, "min": 2, "max": 8, "weight": 20 },
+        "lives":   { "enabled": true, "min": 3, "max": 10, "weight": 15 },
+        "games":   { "enabled": true, "min": 2, "max": 5, "weight": 10 },
         "likes":   { "enabled": true, "min": 5, "max": 10 },
         "friends": { "enabled": true, "min": 1, "max": 3 },
         "shuffle": true,

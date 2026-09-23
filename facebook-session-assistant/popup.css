@@ -129,7 +129,42 @@ main { padding: 12px 16px 18px; }
 .range-row input.invalid { border-color: var(--danger); background: var(--danger-soft); }
 .range-row .unit { font-size: 12px; color: var(--muted); padding-bottom: 11px; }
 
-.card.disabled .range-row, .card.disabled .drawn, .card.disabled .check-row { opacity: 0.45; }
+.range-row.single { grid-template-columns: 1fr auto; }
+
+.card.disabled .range-row, .card.disabled .drawn, .card.disabled .check-row, .card.disabled .weight-row { opacity: 0.45; }
+
+/* Seletor de modo de duração */
+.mode-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+.mode-option {
+  display: flex; align-items: center; gap: 8px; padding: 10px; border: 1px solid var(--border);
+  border-radius: 10px; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--muted);
+}
+.mode-option input { accent-color: var(--primary); margin: 0; }
+.mode-option:has(input:checked) { border-color: var(--primary); background: var(--primary-soft); color: var(--primary-dark); }
+
+/* Opções rápidas de tempo total */
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.chip {
+  border: 1px solid var(--border); background: var(--card); color: var(--text); cursor: pointer;
+  padding: 8px 12px; border-radius: 999px; font-weight: 700; font-size: 13px; min-width: 54px;
+}
+.chip:hover { background: var(--primary-soft); }
+.chip.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+
+/* Prévia da distribuição */
+.distribution { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+.distribution .dist-bar { display: flex; height: 12px; border-radius: 999px; overflow: hidden; background: var(--border); }
+.distribution .dist-bar span { display: block; height: 100%; }
+.distribution .dist-legend { display: flex; flex-wrap: wrap; gap: 6px 12px; font-size: 12px; color: var(--muted); }
+.distribution .dist-legend i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 4px; vertical-align: middle; }
+.distribution .dist-total { font-size: 12px; color: var(--muted); }
+
+/* Barra de participação por atividade */
+.weight-row { margin-top: 10px; }
+.weight-row .weight-head { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+.weight-row .weight-head strong { color: var(--text); font-size: 13px; }
+.weight-row input[type="range"] { width: 100%; accent-color: var(--primary); cursor: pointer; margin: 0; }
+
 
 .check-row {
   display: flex; align-items: center; gap: 10px; padding: 8px 0; font-size: 14px; cursor: pointer;

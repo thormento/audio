@@ -145,13 +145,29 @@ export const GOALS = [
   }
 ];
 
+/**
+ * Modos de duração das atividades:
+ *  - random: sorteia minutos entre mínimo e máximo de cada atividade;
+ *  - total:  o usuário escolhe o tempo total da sessão e a fatia (peso)
+ *            de cada atividade; os minutos são divididos proporcionalmente.
+ */
+export const DURATION_MODES = {
+  RANDOM: 'random',
+  TOTAL: 'total'
+};
+
+/** Opções rápidas de tempo total (minutos) no modo "total". */
+export const TOTAL_MINUTES_PRESETS = [1, 2, 5, 10, 15, 20];
+
 /** Configuração padrão de um perfil. */
 export const DEFAULT_SETTINGS = {
-  feed: { enabled: true, min: 1, max: 15, autoScroll: true },
-  reels: { enabled: true, min: 2, max: 10 },
-  videos: { enabled: true, min: 2, max: 8 },
-  lives: { enabled: true, min: 3, max: 10 },
-  games: { enabled: true, min: 2, max: 5 },
+  durationMode: DURATION_MODES.RANDOM,
+  totalMinutes: 10,
+  feed: { enabled: true, min: 1, max: 15, weight: 30, autoScroll: true },
+  reels: { enabled: true, min: 2, max: 10, weight: 25 },
+  videos: { enabled: true, min: 2, max: 8, weight: 20 },
+  lives: { enabled: true, min: 3, max: 10, weight: 15 },
+  games: { enabled: true, min: 2, max: 5, weight: 10 },
   likes: { enabled: true, min: 5, max: 10 },
   friends: { enabled: true, min: 1, max: 3 },
   shuffle: true,
@@ -169,6 +185,10 @@ export const DEFAULT_PREFS = {
 export const LIMITS = {
   activityMinutesMin: 1,
   activityMinutesMax: 600,
+  totalMinutesMin: 1,
+  totalMinutesMax: 600,
+  weightMin: 0,
+  weightMax: 100,
   goalCountMin: 0,
   goalCountMax: 1000,
   pauseSecondsMin: 0,
