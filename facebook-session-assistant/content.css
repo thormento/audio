@@ -4,17 +4,18 @@
   position: fixed;
   right: 16px;
   bottom: 16px;
-  width: 240px;
+  width: 264px;
   z-index: 2147483000;
   background: #FFFFFF;
   color: #1C1E21;
   border-radius: 14px;
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  font-size: 13px;
+  font-size: 14px;
   overflow: hidden;
   border: 1px solid #E4E6EB;
 }
+#fsa-overlay .fsa-instruction { color: #65676B; font-size: 13px; margin-top: 4px; line-height: 1.4; }
 
 #fsa-overlay .fsa-head {
   display: flex; align-items: center; justify-content: space-between;
@@ -28,12 +29,12 @@
 #fsa-overlay.fsa-collapsed .fsa-body { display: none; }
 #fsa-overlay .fsa-body { padding: 10px 12px 12px; }
 
-#fsa-overlay .fsa-activity { display: flex; justify-content: space-between; font-weight: 700; }
+#fsa-overlay .fsa-activity { display: flex; justify-content: space-between; font-weight: 800; font-size: 15px; }
 #fsa-overlay .fsa-status { color: #65676B; font-weight: 500; font-size: 12px; }
 #fsa-overlay.fsa-paused .fsa-status { color: #B7791F; font-weight: 700; }
 
 #fsa-overlay .fsa-time { display: flex; align-items: baseline; gap: 6px; margin-top: 4px; }
-#fsa-overlay .fsa-remaining { font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums; color: #1877F2; }
+#fsa-overlay .fsa-remaining { font-size: 34px; font-weight: 800; font-variant-numeric: tabular-nums; color: #1877F2; }
 #fsa-overlay .fsa-drawn { color: #65676B; font-size: 12px; }
 
 #fsa-overlay .fsa-progress { height: 6px; background: #E4E6EB; border-radius: 999px; margin-top: 8px; overflow: hidden; }
@@ -43,8 +44,8 @@
 #fsa-overlay .fsa-goal { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 #fsa-overlay .fsa-goal-done { color: #31A24C; }
 #fsa-overlay .fsa-goal button {
-  border: 1px solid #1877F2; background: #E7F0FD; color: #1877F2; font-weight: 700; font-size: 12px;
-  padding: 4px 8px; border-radius: 8px; cursor: pointer;
+  border: 1px solid #1877F2; background: #E7F0FD; color: #1877F2; font-weight: 700; font-size: 13px;
+  padding: 8px 10px; border-radius: 10px; cursor: pointer; min-height: 36px; white-space: nowrap;
 }
 #fsa-overlay .fsa-goal button:hover { background: #1877F2; color: #fff; }
 #fsa-overlay .fsa-goal button:disabled { opacity: 0.5; cursor: default; }
@@ -53,8 +54,8 @@
 #fsa-overlay .fsa-greeting-text { margin: 0 0 6px; font-size: 12px; line-height: 1.4; }
 #fsa-overlay .fsa-greeting-actions { display: flex; gap: 6px; }
 #fsa-overlay .fsa-greeting-actions button {
-  flex: 1; border: 1px solid #1877F2; background: #fff; color: #1877F2; font-weight: 700; font-size: 12px;
-  padding: 4px 8px; border-radius: 8px; cursor: pointer;
+  flex: 1; border: 1px solid #1877F2; background: #fff; color: #1877F2; font-weight: 700; font-size: 13px;
+  padding: 8px 8px; border-radius: 10px; cursor: pointer; min-height: 36px;
 }
 #fsa-overlay .fsa-greeting-actions button:hover { background: #1877F2; color: #fff; }
 #fsa-overlay .fsa-greeting-actions button:disabled { opacity: 0.5; cursor: default; }

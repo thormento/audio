@@ -201,6 +201,7 @@
       </div>
       <div class="fsa-body">
         <div class="fsa-activity"><span class="fsa-step"></span><span class="fsa-status"></span></div>
+        <div class="fsa-instruction"></div>
         <div class="fsa-time"><span class="fsa-remaining">00:00</span><span class="fsa-drawn"></span></div>
         <div class="fsa-progress"><div class="fsa-progress-bar"></div></div>
         <div class="fsa-goals"></div>
@@ -246,9 +247,17 @@
   }
 
   const GOAL_LABELS = {
-    likes: { label: 'Curtidas', button: '+ Curtida' },
-    friends: { label: 'Amigos', button: '+ Solicitação' },
-    messages: { label: 'Mensagens', button: '+ Mensagem', suggest: true }
+    likes: { label: '👍 Curtidas', button: '👍 Curti!' },
+    friends: { label: '🤝 Amigos', button: '🤝 Pedi amizade!' },
+    messages: { label: '💬 Mensagens', button: '💬 Mandei!', suggest: true }
+  };
+  const ACTIVITY_INFO = {
+    feed: { emoji: '📰', instruction: 'Role o feed e curta o que gostar.' },
+    reels: { emoji: '🎬', instruction: 'Assista aos Reels e curta os legais.' },
+    videos: { emoji: '▶️', instruction: 'Escolha um vídeo e assista.' },
+    lives: { emoji: '🔴', instruction: 'Escolha uma live e assista um pouco.' },
+    games: { emoji: '🎮', instruction: 'Escolha um jogo e divirta-se.' },
+    messenger: { emoji: '💬', instruction: 'Escolha um amigo, cole a saudação e envie.' }
   };
   let currentGreeting = '';
 
@@ -287,19 +296,25 @@
     const inPause = session.phase === 'pause';
 
     let label = '';
+    let instruction = '';
     let remaining = 0;
     let total = 0;
     if (inPause) {
-      label = 'Pausa';
+      label = '☕ Pausa';
+      const next = session.steps[session.currentIndex + 1];
+      instruction = next ? `Descanse. Depois vem: ${(ACTIVITY_INFO[next.key] || {}).emoji || ''} ${next.label}.` : 'Descanse um pouco.';
       total = session.pauseDurationMs || 0;
       remaining = session.status === 'running' && session.pauseDeadline ? Math.max(0, session.pauseDeadline - now) : session.pauseRemainingMs || 0;
     } else if (step) {
-      label = step.label;
+      const info = ACTIVITY_INFO[step.key] || { emoji: '', instruction: '' };
+      label = `${info.emoji} ${step.label}`;
+      instruction = info.instruction;
       total = step.durationMs;
       remaining = session.status === 'running' && step.deadline ? Math.max(0, step.deadline - now) : step.remainingMs || 0;
     }
 
     el.querySelector('.fsa-step').textContent = label;
+    el.querySelector('.fsa-instruction').textContent = paused ? 'Pausado. Toque em Continuar no painel da extensão.' : instruction;
     el.querySelector('.fsa-status').textContent = paused ? 'Pausado' : `Etapa ${session.currentIndex + 1}/${session.steps.length}`;
     el.querySelector('.fsa-remaining').textContent = formatClock(remaining);
     el.querySelector('.fsa-drawn').textContent = `de ${formatClock(total)}`;
@@ -315,19 +330,19 @@
         const done = g.done >= g.target;
         const row = `
           <div class="fsa-goal ${done ? 'fsa-goal-done' : ''}">
-            <span>${GOAL_LABELS[key].label}: <strong>${g.done} / ${g.target}</strong>${done ? ' ✓' : ''}</span>
+            <span>${GOAL_LABELS[key].label}: <strong>${g.done} / ${g.target}</strong>${done ? ' 🎉' : ''}</span>
             <button type="button" data-goal="${key}">${GOAL_LABELS[key].button}</button>
           </div>`;
         if (!GOAL_LABELS[key].suggest) return row;
         const text = currentGreeting
           ? currentGreeting.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-          : 'Clique em "Saudação" para sortear uma mensagem.';
+          : 'Toque em "Saudação" para eu escolher uma mensagem.';
         return `${row}
           <div class="fsa-greeting">
             <p class="fsa-greeting-text">${text}</p>
             <div class="fsa-greeting-actions">
-              <button type="button" data-suggest>Saudação</button>
-              <button type="button" data-copy ${currentGreeting ? '' : 'disabled'}>Copiar</button>
+              <button type="button" data-suggest>🎲 Saudação</button>
+              <button type="button" data-copy ${currentGreeting ? '' : 'disabled'}>📋 Copiar</button>
             </div>
             <p class="fsa-greeting-note">Você cola e envia; a extensão só sugere.</p>
           </div>`;

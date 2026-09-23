@@ -20,7 +20,9 @@ import {
   DURATION_MODES,
   TOTAL_MINUTES_PRESETS,
   REPEAT_MODES,
-  REPEAT_MINUTES_PRESETS
+  REPEAT_MINUTES_PRESETS,
+  HOME_TIME_PRESETS,
+  HOME_REPEAT_PRESETS
 } from './utils/constants.js';
 import * as storage from './utils/storage.js';
 import { getCurrentStep, getNextStep, stepRemainingMs, pauseRemainingMs, distributeTotalMinutes } from './utils/session.js';
@@ -36,7 +38,7 @@ const state = {
   greeting: '',
   history: [],
   profileName: '',
-  view: 'panel',
+  view: 'home',
   busy: false,
   lastZeroCheck: 0
 };
@@ -327,6 +329,7 @@ function updateCardStates() {
     card.classList.toggle('disabled', toggle && !toggle.checked);
   });
   syncChecklist();
+  updateRepeatStates();
   $('#pause-range').style.opacity = $('#opt-pauses').checked ? '1' : '0.45';
   const totalMode = currentMode() === DURATION_MODES.TOTAL;
   $('#total-config').hidden = !totalMode;
@@ -370,6 +373,76 @@ async function saveSettingsFromForm({ silent = false } = {}) {
   }
   if (!silent) toast('Configurações salvas.', 'success');
   return true;
+}
+
+/* ------------------------------------------------------------ */
+/* Painel simples (Início): fachada sobre o formulário de Ajustes  */
+/* ------------------------------------------------------------ */
+
+function buildHome() {
+  $('#home-tiles').innerHTML = ACTIVITIES.map(
+    (a) => `<button type="button" class="tile" data-tile="${a.key}" title="${escapeHtml(a.title)}">
+      <span class="tile-check">✔</span><span class="tile-emoji">${a.emoji}</span><span>${a.label}</span></button>`
+  ).join('');
+  $('#home-time').innerHTML = HOME_TIME_PRESETS.map((m) => `<button type="button" class="chip" data-home-time="${m}">${m} min</button>`).join('')
+    + '<button type="button" class="chip" data-home-time="random">🎲 Sortear</button>';
+  $('#home-repeat').innerHTML = HOME_REPEAT_PRESETS.map((m) => {
+    const label = m === 0 ? 'Não' : m >= 60 ? `A cada ${m / 60}h` : `A cada ${m} min`;
+    return `<button type="button" class="chip" data-home-repeat="${m}">${label}</button>`;
+  }).join('');
+}
+
+/** Reflete o formulário de Ajustes nos controles do Início. */
+function renderHome() {
+  const form = readForm();
+  document.querySelectorAll('[data-tile]').forEach((tile) => {
+    const cfg = form[tile.dataset.tile] || {};
+    tile.classList.toggle('on', Boolean(cfg.enabled));
+  });
+  const totalMode = form.durationMode === DURATION_MODES.TOTAL;
+  document.querySelectorAll('[data-home-time]').forEach((chip) => {
+    const v = chip.dataset.homeTime;
+    chip.classList.toggle('active', v === 'random' ? !totalMode : totalMode && Number(v) === Number(form.totalMinutes));
+  });
+  $('#home-time-note').textContent = totalMode
+    ? `${form.totalMinutes || 0} minutos no total, divididos entre as atividades ligadas.`
+    : 'Modo sorteio: cada atividade usa o tempo mínimo e máximo definidos em Ajustes.';
+  const repeatOn = Boolean(form.autoRepeat && form.autoRepeat.enabled);
+  const fixed = form.autoRepeat && form.autoRepeat.mode === REPEAT_MODES.FIXED;
+  document.querySelectorAll('[data-home-repeat]').forEach((chip) => {
+    const v = Number(chip.dataset.homeRepeat);
+    chip.classList.toggle('active', v === 0 ? !repeatOn : repeatOn && fixed && v === Number(form.autoRepeat.minutes));
+  });
+}
+
+async function applyHomeChange() {
+  updateCardStates();
+  const ok = await saveSettingsFromForm({ silent: true });
+  renderHome();
+  return ok;
+}
+
+async function startFromHome({ onlyPlan = false } = {}) {
+  const ok = await saveSettingsFromForm({ silent: true });
+  if (!ok) {
+    state.view = 'settings';
+    render();
+    return;
+  }
+  if (state.busy) return;
+  state.busy = true;
+  try {
+    let session = await send('session:generate');
+    if (!onlyPlan) session = await send('session:start');
+    state.session = session;
+    render();
+    toast(onlyPlan ? 'Plano pronto! Confira e clique em Começar.' : 'Vamos lá! A página do Facebook foi aberta.', 'success');
+  } catch (err) {
+    error('Falha ao iniciar pelo painel simples', err);
+    toast(err.message, 'error');
+  } finally {
+    state.busy = false;
+  }
 }
 
 /* ------------------------------------------------------------ */
@@ -431,6 +504,16 @@ function renderDrawnValues() {
 /* Sessão: pronta / em execução / finalizada                    */
 /* ------------------------------------------------------------ */
 
+function activityEmoji(key) {
+  const activity = ACTIVITIES.find((a) => a.key === key);
+  return activity ? activity.emoji : '';
+}
+
+function activityInstruction(key) {
+  const activity = ACTIVITIES.find((a) => a.key === key);
+  return activity ? activity.instruction : '';
+}
+
 function renderReady(session) {
   $('#ready-total').textContent = formatDuration(session.totalEstimatedMs);
   $('#ready-mode').textContent =
@@ -442,13 +525,13 @@ function renderReady(session) {
     .map(
       (step) => `
       <li>
-        <span>${escapeHtml(step.label)} — <strong>${formatClock(step.durationMs)}</strong></span>
+        <span>${activityEmoji(step.key)} ${escapeHtml(step.label)} — <strong>${formatClock(step.durationMs)}</strong></span>
         ${step.pauseAfterMs > 0 ? `<span class="pause">pausa ${formatClock(step.pauseAfterMs)}</span>` : ''}
       </li>`
     )
     .join('');
   $('#ready-goals').innerHTML = GOALS.filter((g) => session.goals[g.key] && session.goals[g.key].enabled)
-    .map((g) => `<span>${g.label}: ${session.goals[g.key].target}</span>`)
+    .map((g) => `<span>${g.emoji} ${g.label}: ${session.goals[g.key].target}</span>`)
     .join('');
 }
 
@@ -465,23 +548,27 @@ function renderLiveTimers(session) {
 
   if (inPause) {
     const remaining = pauseRemainingMs(session, now);
+    $('#live-emoji').textContent = '☕';
     $('#live-activity').textContent = 'PAUSA';
-    $('#live-phase-label').textContent = next ? `Próxima atividade: ${next.label}` : 'Pausa';
+    $('#live-instruction').textContent = next ? `Descanse um pouco. Depois vem: ${next.emoji || activityEmoji(next.key)} ${next.label}.` : 'Descanse um pouco.';
+    $('#live-phase-label').textContent = paused ? 'Pausado por você' : 'Falta';
     $('#live-drawn').textContent = formatClock(session.pauseDurationMs);
     $('#live-remaining').textContent = formatClock(remaining);
     $('#live-progress').style.width = `${progress(session.pauseDurationMs - remaining, session.pauseDurationMs) * 100}%`;
-    $('#live-next').textContent = `Próxima atividade em: ${formatClock(remaining)}`;
+    $('#live-next').textContent = `Próxima atividade em ${formatClock(remaining)}`;
     maybeRequestCheck(remaining, paused);
   } else if (step) {
     const remaining = stepRemainingMs(session, step, now);
+    $('#live-emoji').textContent = activityEmoji(step.key);
     $('#live-activity').textContent = step.label.toUpperCase();
-    $('#live-phase-label').textContent = paused ? 'Sessão pausada' : 'Em andamento';
+    $('#live-instruction').textContent = activityInstruction(step.key);
+    $('#live-phase-label').textContent = paused ? 'Pausado por você' : 'Falta';
     $('#live-drawn').textContent = formatClock(step.durationMs);
     $('#live-remaining').textContent = formatClock(remaining);
     $('#live-progress').style.width = `${progress(step.durationMs - remaining, step.durationMs) * 100}%`;
     $('#live-next').textContent = next
-      ? `Próxima: ${next.label}${step.pauseAfterMs > 0 && session.pausesEnabled ? ` (após pausa de ${formatClock(step.pauseAfterMs)})` : ''}`
-      : 'Última etapa da sessão';
+      ? `Depois: ${activityEmoji(next.key)} ${next.label}${step.pauseAfterMs > 0 && session.pausesEnabled ? ` (com pausa de ${formatClock(step.pauseAfterMs)})` : ''}`
+      : 'Esta é a última atividade.';
     maybeRequestCheck(remaining, paused);
   }
 }
@@ -498,25 +585,26 @@ function renderLiveGoals(session) {
     const g = session.goals[goal.key];
     const row = document.createElement('div');
     row.className = 'goal-row';
+    const done = g.done >= g.target;
     row.innerHTML = `
       <div>
-        <div class="goal-name">${goal.label}</div>
+        <div class="goal-name">${goal.emoji} ${goal.label}</div>
         <div class="goal-count">${g.done} / ${g.target}</div>
-        ${g.done >= g.target ? `<div class="goal-done">${goal.doneMessage}</div>` : ''}
+        ${done ? `<div class="goal-done">🎉 ${goal.doneMessage}</div>` : ''}
       </div>
-      <button type="button" class="btn btn-secondary btn-small" data-goal="${goal.key}">${goal.buttonLabel}</button>
+      <button type="button" class="btn btn-secondary btn-small ${done ? 'done' : ''}" data-goal="${goal.key}">${goal.emoji} ${goal.bigButton}</button>
     `;
     goalsBox.appendChild(row);
     if (goal.suggest) {
       const box = document.createElement('div');
       box.className = 'suggestion';
       box.innerHTML = `
-        <p class="suggestion-text" id="greeting-text">${state.greeting ? escapeHtml(state.greeting) : 'Clique em "Sugerir saudação" para sortear uma mensagem.'}</p>
+        <p class="suggestion-text" id="greeting-text">${state.greeting ? escapeHtml(state.greeting) : 'Toque em "Sortear saudação" para eu escolher uma mensagem para você.'}</p>
         <div class="suggestion-actions">
-          <button type="button" class="btn btn-secondary btn-small" data-suggest>Sugerir saudação</button>
-          <button type="button" class="btn btn-primary btn-small" data-copy ${state.greeting ? '' : 'disabled'}>Copiar</button>
+          <button type="button" class="btn btn-secondary btn-small" data-suggest>🎲 Sortear saudação</button>
+          <button type="button" class="btn btn-primary btn-small" data-copy ${state.greeting ? '' : 'disabled'}>📋 Copiar</button>
         </div>
-        <p class="muted small">Cole no Messenger, envie você mesmo e depois registre.</p>
+        <p class="muted small">Depois cole na conversa, envie e toque em "Mandei a mensagem!".</p>
       `;
       goalsBox.appendChild(box);
     }
@@ -540,14 +628,14 @@ function renderFinished(session) {
   ACTIVITIES.forEach((activity) => {
     const ms = summary.activities[activity.key] || 0;
     if (session.steps.some((s) => s.key === activity.key)) {
-      rows.push([activity.label, formatMinutesShort(ms)]);
+      rows.push([`${activity.emoji} ${activity.label}`, formatMinutesShort(ms)]);
     }
   });
   GOALS.forEach((goal) => {
     const g = summary.goals[goal.key];
-    if (g && g.enabled) rows.push([goal.summaryLabel, `${g.done} / ${g.target}`]);
+    if (g && g.enabled) rows.push([`${goal.emoji} ${goal.summaryLabel}`, `${g.done} / ${g.target}`]);
   });
-  rows.push(['Etapas concluídas', `${summary.stepsCompleted} / ${summary.stepsTotal}`]);
+  rows.push(['✅ Etapas concluídas', `${summary.stepsCompleted} / ${summary.stepsTotal}`]);
   $('#summary-list').innerHTML = rows.map(([k, v]) => `<dt>${escapeHtml(k)}</dt><dd>${escapeHtml(v)}</dd>`).join('');
 }
 
@@ -588,14 +676,14 @@ function renderHistory() {
   const list = $('#history-list');
   $('#history-limit').textContent = HISTORY_LIMIT;
   if (!state.history.length) {
-    list.innerHTML = '<p class="empty">Nenhuma sessão registrada ainda.</p>';
+    list.innerHTML = '<p class="empty">Ainda não tem nada aqui. Faça sua primeira sessão! 🚀</p>';
     return;
   }
   list.innerHTML = state.history
     .map((entry) => {
       const acts = ACTIVITIES.map((a) => {
         const ms = entry.activities ? entry.activities[a.key] || 0 : 0;
-        return ms > 0 ? `${a.label} ${formatMinutesShort(ms)}` : null;
+        return ms > 0 ? `${a.emoji} ${a.label} ${formatMinutesShort(ms)}` : null;
       })
         .filter(Boolean)
         .join(' · ');
@@ -607,7 +695,7 @@ function renderHistory() {
           </div>
           <div class="details">
             ${acts || 'Sem atividades registradas'}<br>
-            Curtidas: ${entry.likes || 0} · Solicitações: ${entry.friends || 0} · Mensagens: ${entry.messages || 0}
+            👍 ${entry.likes || 0} · 🤝 ${entry.friends || 0} · 💬 ${entry.messages || 0}
           </div>
         </div>`;
     })
@@ -631,12 +719,16 @@ function render() {
   renderDrawnValues();
   renderScheduler();
 
-  const showConfig = state.view === 'panel' && (!session || status === SESSION_STATUS.IDLE);
-  const showSession = state.view === 'panel' && session && status !== SESSION_STATUS.IDLE;
+  const showHome = state.view === 'home' && (!session || status === SESSION_STATUS.IDLE);
+  const showSession = state.view === 'home' && session && status !== SESSION_STATUS.IDLE;
+  const showConfig = state.view === 'settings';
 
+  $('#view-home').hidden = !showHome;
   $('#view-config').hidden = !showConfig;
   $('#view-session').hidden = !showSession;
   $('#view-history').hidden = state.view !== 'history';
+
+  if (showHome) renderHome();
 
   document.querySelectorAll('.tab').forEach((tab) => tab.classList.toggle('active', tab.dataset.view === state.view));
 
@@ -667,6 +759,41 @@ function bindEvents() {
   });
 
   $('#open-options').addEventListener('click', () => chrome.runtime.openOptionsPage());
+
+  $('#home-tiles').addEventListener('click', (event) => {
+    const tile = event.target.closest('[data-tile]');
+    if (!tile) return;
+    const toggle = document.querySelector(`[data-field="${tile.dataset.tile}.enabled"]`);
+    if (!toggle) return;
+    toggle.checked = !toggle.checked;
+    tile.classList.toggle('on', toggle.checked);
+    applyHomeChange();
+  });
+  $('#home-time').addEventListener('click', (event) => {
+    const chip = event.target.closest('[data-home-time]');
+    if (!chip) return;
+    const v = chip.dataset.homeTime;
+    if (v === 'random') {
+      document.querySelector('input[name="duration-mode"][value="random"]').checked = true;
+    } else {
+      document.querySelector('input[name="duration-mode"][value="total"]').checked = true;
+      $('#opt-total-minutes').value = v;
+    }
+    applyHomeChange();
+  });
+  $('#home-repeat').addEventListener('click', (event) => {
+    const chip = event.target.closest('[data-home-repeat]');
+    if (!chip) return;
+    const minutes = Number(chip.dataset.homeRepeat);
+    $('#opt-repeat').checked = minutes > 0;
+    if (minutes > 0) {
+      document.querySelector('input[name="repeat-mode"][value="fixed"]').checked = true;
+      document.querySelector('[data-field="autoRepeat.minutes"]').value = minutes;
+    }
+    applyHomeChange();
+  });
+  $('#btn-go').addEventListener('click', () => startFromHome());
+  $('#btn-plan').addEventListener('click', () => startFromHome({ onlyPlan: true }));
 
   $('#view-config').addEventListener('change', (event) => {
     if (event.target.matches('input[type="checkbox"], input[name="duration-mode"]')) updateCardStates();
@@ -716,17 +843,18 @@ function bindEvents() {
   $('#btn-generate').addEventListener('click', async () => {
     const ok = await saveSettingsFromForm({ silent: true });
     if (!ok) return;
-    await runCommand('session:generate', {}, 'Sessão gerada. Confira os valores sorteados.');
+    state.view = 'home';
+    await runCommand('session:generate', {}, 'Plano pronto! Confira e clique em Começar.');
   });
 
   $('#btn-start').addEventListener('click', () => runCommand('session:start'));
-  $('#btn-regenerate').addEventListener('click', () => runCommand('session:generate', {}, 'Nova sessão sorteada.'));
+  $('#btn-regenerate').addEventListener('click', () => runCommand('session:generate', {}, 'Sorteado de novo!'));
   $('#btn-discard').addEventListener('click', () => runCommand('session:discard'));
   $('#btn-pause').addEventListener('click', () => runCommand('session:pause'));
   $('#btn-resume').addEventListener('click', () => runCommand('session:resume'));
   $('#btn-skip').addEventListener('click', () => runCommand('session:skip'));
   $('#btn-finish').addEventListener('click', () => {
-    if (confirm('Finalizar a sessão agora? O resumo será salvo no histórico.')) runCommand('session:stop');
+    if (confirm('Parar a sessão agora? O resumo vai para o histórico.')) runCommand('session:stop');
   });
   $('#btn-reopen').addEventListener('click', () => runCommand('session:reopenTab'));
   $('#btn-new').addEventListener('click', () => runCommand('session:discard'));
@@ -744,7 +872,7 @@ function bindEvents() {
         $('#greeting-text').textContent = state.greeting;
         $('#live-goals').querySelector('[data-copy]').disabled = !state.greeting;
         await copyText(state.greeting);
-        toast('Saudação sorteada e copiada. Cole no Messenger.', 'success');
+        toast('Saudação copiada! Agora cole na conversa.', 'success');
       } catch (err) {
         toast(err.message, 'error');
       }
@@ -788,7 +916,7 @@ function bindEvents() {
   // Cronômetros: recalculados a cada segundo a partir dos prazos.
   setInterval(() => {
     const s = state.session;
-    if (s && (s.status === SESSION_STATUS.RUNNING || s.status === SESSION_STATUS.PAUSED) && state.view === 'panel') {
+    if (s && (s.status === SESSION_STATUS.RUNNING || s.status === SESSION_STATUS.PAUSED) && state.view === 'home') {
       renderLiveTimers(s);
     }
     if (state.scheduler && state.scheduler.active) renderScheduler();
@@ -840,6 +968,7 @@ async function init() {
   buildActivityChecklist();
   buildTotalPresets();
   buildRepeatPresets();
+  buildHome();
   bindEvents();
   try {
     await loadSettings();

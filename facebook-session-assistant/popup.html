@@ -9,48 +9,146 @@
 <body>
   <header class="app-header">
     <div class="brand">
-      <img src="icons/icon32.png" alt="" width="28" height="28">
+      <img src="icons/icon48.png" alt="" width="34" height="34">
       <div>
         <h1 id="app-name">Facebook Session Assistant</h1>
         <div class="status-line">
           <span class="status-dot" id="status-dot"></span>
-          <span id="status-label">Pronto</span>
+          <span id="status-label">Pronto para começar</span>
         </div>
       </div>
     </div>
-    <button type="button" class="icon-btn" id="open-options" title="Opções e histórico completo" aria-label="Abrir opções">⚙</button>
+    <button type="button" class="icon-btn" id="open-options" title="Mais opções" aria-label="Abrir opções">⚙️</button>
   </header>
 
   <nav class="tabs" role="tablist">
-    <button type="button" class="tab active" data-view="panel" role="tab">Painel</button>
-    <button type="button" class="tab" data-view="history" role="tab">Histórico</button>
+    <button type="button" class="tab active" data-view="home" role="tab">🏠 Início</button>
+    <button type="button" class="tab" data-view="settings" role="tab">🛠️ Ajustes</button>
+    <button type="button" class="tab" data-view="history" role="tab">📜 Histórico</button>
   </nav>
 
   <main id="main">
     <div id="scheduler-banner" class="scheduler" hidden>
       <div class="scheduler-text">
-        <strong>Repetição automática ativa</strong>
+        <strong>🔁 Repetindo sozinho</strong>
         <span id="scheduler-detail"></span>
       </div>
       <div class="scheduler-actions">
-        <button type="button" class="btn btn-small btn-primary" id="btn-run-now">Iniciar agora</button>
+        <button type="button" class="btn btn-small btn-primary" id="btn-run-now">Começar já</button>
         <button type="button" class="btn btn-small btn-ghost" id="btn-stop-repeat">Parar</button>
       </div>
     </div>
 
-    <!-- ======================= CONFIGURAÇÃO ======================= -->
+    <!-- ======================= INÍCIO (modo simples) ======================= -->
+    <section id="view-home" class="view" hidden>
+      <div class="card">
+        <div class="step-title"><span class="step-num">1</span><h3>O que vamos fazer?</h3></div>
+        <p class="muted">Toque para ligar ou desligar. Pode escolher só um.</p>
+        <div class="tiles" id="home-tiles"></div>
+      </div>
+
+      <div class="card">
+        <div class="step-title"><span class="step-num">2</span><h3>Quanto tempo?</h3></div>
+        <div class="chips big" id="home-time"></div>
+        <p class="muted small" id="home-time-note"></p>
+      </div>
+
+      <div class="card">
+        <div class="step-title"><span class="step-num">3</span><h3>Repetir sozinho?</h3></div>
+        <p class="muted">Quando acabar, espera esse tempo e começa de novo.</p>
+        <div class="chips big" id="home-repeat"></div>
+      </div>
+
+      <button type="button" class="btn btn-go" id="btn-go">▶ COMEÇAR AGORA</button>
+      <button type="button" class="btn btn-secondary btn-wide" id="btn-plan">👀 Ver o plano antes</button>
+
+      <div class="card help">
+        <h3>Como funciona</h3>
+        <ol class="help-steps">
+          <li>🎯 Você escolhe o que fazer e por quanto tempo.</li>
+          <li>🌐 A extensão abre a página certa e conta o tempo.</li>
+          <li>👍 Você curte, conversa e marca no botão. Ela nunca faz isso por você.</li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- ======================= SESSÃO ======================= -->
+    <section id="view-session" class="view" hidden>
+      <div id="session-warning" class="warning" hidden>
+        <span id="session-warning-text"></span>
+        <button type="button" class="btn btn-small" id="btn-reopen" hidden>Reabrir aba</button>
+      </div>
+
+      <!-- Plano pronto (aguardando início) -->
+      <div id="session-ready" hidden>
+        <div class="card">
+          <h3>📋 Plano da sessão</h3>
+          <p class="muted">Tempo total: <strong id="ready-total"></strong></p>
+          <p class="muted small" id="ready-mode"></p>
+          <ol class="step-list" id="ready-steps"></ol>
+          <div class="goal-summary" id="ready-goals"></div>
+        </div>
+        <button type="button" class="btn btn-go" id="btn-start">▶ COMEÇAR</button>
+        <div class="actions">
+          <button type="button" class="btn btn-secondary" id="btn-regenerate">🎲 Sortear de novo</button>
+          <button type="button" class="btn btn-ghost" id="btn-discard">Voltar</button>
+        </div>
+      </div>
+
+      <!-- Sessão em execução / pausada -->
+      <div id="session-live" hidden>
+        <div class="card hero">
+          <div class="hero-top">
+            <span class="eyebrow">Agora</span>
+            <span class="pill" id="live-step-counter">Etapa 1 / 5</span>
+          </div>
+          <div class="hero-activity"><span class="hero-emoji" id="live-emoji">📰</span><span id="live-activity">FEED</span></div>
+          <div class="hero-instruction" id="live-instruction"></div>
+          <div class="hero-remaining" id="live-remaining">05:42</div>
+          <div class="hero-sub"><span id="live-phase-label">Tempo restante</span> · de <span id="live-drawn">08:00</span></div>
+          <div class="progress"><div class="progress-bar" id="live-progress"></div></div>
+          <p class="muted small" id="live-next">Depois: Reels</p>
+          <p class="muted small">Sessão inteira: <strong id="live-total"></strong></p>
+        </div>
+
+        <div class="card">
+          <h3>Marque o que você fez</h3>
+          <div class="goal-rows" id="live-goals"></div>
+        </div>
+
+        <div class="actions">
+          <button type="button" class="btn btn-secondary" id="btn-pause">⏸ Pausar</button>
+          <button type="button" class="btn btn-primary" id="btn-resume" hidden>▶ Continuar</button>
+          <button type="button" class="btn btn-secondary" id="btn-skip">⏭ Pular</button>
+        </div>
+        <button type="button" class="btn btn-danger btn-wide" id="btn-finish">⏹ Parar tudo</button>
+      </div>
+
+      <!-- Sessão finalizada -->
+      <div id="session-finished" hidden>
+        <div class="card celebrate">
+          <div class="confetti" aria-hidden="true">🎉</div>
+          <h3>Parabéns! Sessão completa</h3>
+          <p class="muted">Você ficou <strong id="summary-total"></strong> no Facebook.</p>
+          <dl class="summary-list" id="summary-list"></dl>
+        </div>
+        <button type="button" class="btn btn-go" id="btn-new">🔄 Fazer outra</button>
+      </div>
+    </section>
+
+    <!-- ======================= AJUSTES (avançado) ======================= -->
     <section id="view-config" class="view" hidden>
       <div class="profile-line">
         <span>Perfil ativo:</span>
         <strong id="profile-name">Perfil 1</strong>
       </div>
+      <p class="muted small settings-intro">Aqui ficam os ajustes detalhados. O Início usa estes mesmos valores.</p>
 
       <div class="card">
         <div class="card-head">
           <h3>Quais atividades executar</h3>
-          <span class="pill-muted" id="activity-count">5 de 5</span>
+          <span class="pill-muted" id="activity-count">6 de 6</span>
         </div>
-        <p class="muted small">Marque só o que quer nesta sessão. Pode ser uma única atividade.</p>
         <div class="checklist" id="activity-checklist"></div>
         <p class="muted small hint">Outra forma de pular uma atividade: deixe o tempo máximo em <strong>0</strong> (ou a participação em <strong>0%</strong> no modo de tempo total).</p>
       </div>
@@ -60,11 +158,11 @@
         <div class="mode-switch" role="radiogroup">
           <label class="mode-option">
             <input type="radio" name="duration-mode" value="random">
-            <span>Sortear entre mín. e máx.</span>
+            <span>🎲 Sortear entre mín. e máx.</span>
           </label>
           <label class="mode-option">
             <input type="radio" name="duration-mode" value="total">
-            <span>Tempo total dividido</span>
+            <span>⏱️ Tempo total dividido</span>
           </label>
         </div>
         <div id="total-config" hidden>
@@ -88,11 +186,11 @@
         <h3>Sessão</h3>
         <label class="check-row">
           <input type="checkbox" id="opt-shuffle">
-          <span>Embaralhar atividades</span>
+          <span>Embaralhar a ordem das atividades</span>
         </label>
         <label class="check-row">
           <input type="checkbox" id="opt-pauses">
-          <span>Ativar pausas entre atividades</span>
+          <span>Fazer uma pausa entre as atividades</span>
         </label>
         <div class="range-row" id="pause-range">
           <label>
@@ -160,84 +258,8 @@
       <div id="form-errors" class="errors" hidden></div>
 
       <div class="actions">
-        <button type="button" class="btn btn-secondary" id="btn-save">Salvar configurações</button>
-        <button type="button" class="btn btn-primary" id="btn-generate">Gerar nova sessão</button>
-      </div>
-    </section>
-
-    <!-- ======================= SESSÃO ======================= -->
-    <section id="view-session" class="view" hidden>
-      <div id="session-warning" class="warning" hidden>
-        <span id="session-warning-text"></span>
-        <button type="button" class="btn btn-small" id="btn-reopen" hidden>Reabrir aba</button>
-      </div>
-
-      <!-- Sessão gerada (aguardando início) -->
-      <div id="session-ready" hidden>
-        <div class="card">
-          <h3>Sessão gerada</h3>
-          <p class="muted">Tempo total estimado: <strong id="ready-total"></strong></p>
-          <p class="muted small" id="ready-mode"></p>
-          <ol class="step-list" id="ready-steps"></ol>
-          <div class="goal-summary" id="ready-goals"></div>
-        </div>
-        <div class="actions">
-          <button type="button" class="btn btn-primary btn-wide" id="btn-start">Iniciar sessão</button>
-        </div>
-        <div class="actions">
-          <button type="button" class="btn btn-secondary" id="btn-regenerate">Gerar novamente</button>
-          <button type="button" class="btn btn-ghost" id="btn-discard">Descartar</button>
-        </div>
-      </div>
-
-      <!-- Sessão em execução / pausada -->
-      <div id="session-live" hidden>
-        <div class="card hero">
-          <div class="hero-top">
-            <span class="eyebrow">Sessão atual</span>
-            <span class="pill" id="live-step-counter">Etapa 1 / 5</span>
-          </div>
-          <div class="hero-activity" id="live-activity">FEED</div>
-          <div class="hero-sub" id="live-phase-label">Tempo sorteado</div>
-          <div class="hero-times">
-            <div>
-              <span class="label">Tempo</span>
-              <span class="value" id="live-drawn">08:00</span>
-            </div>
-            <div>
-              <span class="label">Restante</span>
-              <span class="value big" id="live-remaining">05:42</span>
-            </div>
-          </div>
-          <div class="progress"><div class="progress-bar" id="live-progress"></div></div>
-          <p class="muted small" id="live-next">Próxima: Reels</p>
-          <p class="muted small">Tempo total estimado: <strong id="live-total"></strong></p>
-        </div>
-
-        <div class="card">
-          <div class="goal-rows" id="live-goals"></div>
-        </div>
-
-        <div class="actions">
-          <button type="button" class="btn btn-secondary" id="btn-pause">Pausar</button>
-          <button type="button" class="btn btn-primary" id="btn-resume" hidden>Continuar</button>
-          <button type="button" class="btn btn-secondary" id="btn-skip">Pular etapa</button>
-        </div>
-        <div class="actions">
-          <button type="button" class="btn btn-danger btn-wide" id="btn-finish">Finalizar</button>
-        </div>
-      </div>
-
-      <!-- Sessão finalizada -->
-      <div id="session-finished" hidden>
-        <div class="card">
-          <h3>Sessão finalizada</h3>
-          <p class="muted">Tempo total: <strong id="summary-total"></strong></p>
-          <dl class="summary-list" id="summary-list"></dl>
-        </div>
-        <div class="actions">
-          <button type="button" class="btn btn-primary btn-wide" id="btn-new">Nova sessão</button>
-        </div>
+        <button type="button" class="btn btn-secondary" id="btn-save">💾 Salvar</button>
+        <button type="button" class="btn btn-primary" id="btn-generate">👀 Ver o plano</button>
       </div>
     </section>
 
@@ -245,10 +267,10 @@
     <section id="view-history" class="view" hidden>
       <div class="card">
         <div class="card-head">
-          <h3>Histórico</h3>
-          <button type="button" class="btn btn-small btn-ghost" id="btn-clear-history">Limpar histórico</button>
+          <h3>📜 Histórico</h3>
+          <button type="button" class="btn btn-small btn-ghost" id="btn-clear-history">Limpar</button>
         </div>
-        <p class="muted small">Últimas <span id="history-limit">30</span> sessões, salvas apenas neste navegador.</p>
+        <p class="muted small">Últimas <span id="history-limit">30</span> sessões, guardadas só neste computador.</p>
         <div id="history-list"></div>
       </div>
     </section>

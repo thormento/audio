@@ -21,9 +21,20 @@ A extensão usa a conta do Facebook que já estiver autenticada no navegador. N�
 
 ---
 
-## Como usar
+## Como usar (modo simples, aba Início)
 
-1. **Abra o painel** clicando no ícone da extensão.
+1. **Abra o painel** clicando no ícone da extensão. A aba **Início** tem três passos:
+   - **1. O que vamos fazer?** Toque nos quadrados (📰 Feed, 🎬 Reels, ▶️ Vídeos, 🔴 Lives, 🎮 Jogos, 💬 Messenger) para ligar ou desligar. Pode escolher só um.
+   - **2. Quanto tempo?** Toque em 5, 10, 15, 20, 30, 45 ou 60 minutos (o tempo é dividido entre as atividades ligadas) ou em 🎲 Sortear para usar os intervalos de Ajustes.
+   - **3. Repetir sozinho?** Não, ou a cada 30 min, 1h, 2h ou 3h.
+2. Toque em **▶ COMEÇAR AGORA**. A extensão abre a página certa, mostra o que fazer e conta o tempo. Ou toque em **👀 Ver o plano antes** para conferir o sorteio.
+3. Na tela ao vivo, marque o que você fez com os botões grandes: **👍 Curti um post!**, **🤝 Pedi amizade!**, **💬 Mandei a mensagem!**. Ao terminar, aparece a celebração com o resumo e o botão **Fazer outra**.
+
+Tudo que o Início faz também pode ser ajustado em detalhe na aba **Ajustes**, descrita abaixo.
+
+## Ajustes detalhados (aba Ajustes)
+
+1. **Abra a aba Ajustes** no painel.
 2. **Marque quais atividades executar** no card "Quais atividades executar". Pode ser uma só (por exemplo, apenas Feed ou apenas Lives). Cada card também tem o interruptor "Executar: Sim/Não". Outra forma de pular uma atividade é deixar o **tempo máximo em 0** (ou a participação em 0% no modo de tempo total): ela aparece como "não executada" na sessão.
 3. **Escolha o modo de duração** no card "Duração das atividades":
    - **Sortear entre mín. e máx.**: cada atividade tem tempo mínimo e máximo (minutos) e a extensão sorteia um valor a cada sessão.

@@ -61,12 +61,18 @@ export const STEP_STATUS = {
 
 /** Rótulos de status exibidos na interface. */
 export const STATUS_LABELS = {
-  [SESSION_STATUS.IDLE]: 'Pronto',
-  [SESSION_STATUS.READY]: 'Sessão gerada',
-  [SESSION_STATUS.RUNNING]: 'Executando',
+  [SESSION_STATUS.IDLE]: 'Pronto para começar',
+  [SESSION_STATUS.READY]: 'Plano pronto',
+  [SESSION_STATUS.RUNNING]: 'Em andamento',
   [SESSION_STATUS.PAUSED]: 'Pausado',
-  [SESSION_STATUS.FINISHED]: 'Finalizado'
+  [SESSION_STATUS.FINISHED]: 'Concluído'
 };
+
+/** Atalhos de tempo total no painel simples (minutos). */
+export const HOME_TIME_PRESETS = [5, 10, 15, 20, 30, 45, 60];
+
+/** Atalhos de repetição no painel simples (minutos; 0 = não repetir). */
+export const HOME_REPEAT_PRESETS = [0, 30, 60, 120, 180];
 
 /**
  * Atividades com cronômetro. A ordem aqui é a ordem padrão quando
@@ -75,6 +81,8 @@ export const STATUS_LABELS = {
 export const ACTIVITIES = [
   {
     key: 'feed',
+    emoji: '📰',
+    instruction: 'Role o feed e veja as novidades. Curta o que você gostar!',
     label: 'Feed',
     title: 'Navegar pelo Feed',
     description: 'Abre a página inicial e acompanha o tempo de navegação.',
@@ -84,6 +92,8 @@ export const ACTIVITIES = [
   },
   {
     key: 'reels',
+    emoji: '🎬',
+    instruction: 'Assista aos Reels. Curta os que achar legais!',
     label: 'Reels',
     title: 'Assistir Reels',
     description: 'Abre a área de Reels com cronômetro regressivo.',
@@ -93,6 +103,8 @@ export const ACTIVITIES = [
   },
   {
     key: 'videos',
+    emoji: '▶️',
+    instruction: 'Escolha um vídeo e assista.',
     label: 'Vídeos',
     title: 'Assistir vídeos',
     description: 'Abre a área de vídeos (Watch).',
@@ -102,6 +114,8 @@ export const ACTIVITIES = [
   },
   {
     key: 'lives',
+    emoji: '🔴',
+    instruction: 'Escolha uma live e assista um pouco.',
     label: 'Lives',
     title: 'Assistir Lives',
     description: 'Abre a área de transmissões ao vivo. Você escolhe a live.',
@@ -111,6 +125,8 @@ export const ACTIVITIES = [
   },
   {
     key: 'games',
+    emoji: '🎮',
+    instruction: 'Escolha um jogo e divirta-se um pouco.',
     label: 'Jogos',
     title: 'Jogos do Facebook',
     description: 'Abre a área de jogos. Você escolhe o jogo.',
@@ -120,6 +136,8 @@ export const ACTIVITIES = [
   },
   {
     key: 'messenger',
+    emoji: '💬',
+    instruction: 'Escolha um amigo, cole a saudação e envie.',
     label: 'Messenger',
     title: 'Conversar com amigos',
     description: 'Abre as mensagens. Você escolhe o amigo e envia a saudação sugerida.',
@@ -136,6 +154,8 @@ export const ACTIVITIES = [
 export const GOALS = [
   {
     key: 'likes',
+    emoji: '👍',
+    bigButton: 'Curti um post!',
     label: 'Curtidas',
     title: 'Curtidas durante a sessão',
     description: 'Você curte manualmente e registra aqui.',
@@ -146,6 +166,8 @@ export const GOALS = [
   },
   {
     key: 'friends',
+    emoji: '🤝',
+    bigButton: 'Pedi amizade!',
     label: 'Amigos',
     title: 'Solicitações de amizade',
     description: 'Você envia manualmente e registra aqui.',
@@ -156,6 +178,8 @@ export const GOALS = [
   },
   {
     key: 'messages',
+    emoji: '💬',
+    bigButton: 'Mandei a mensagem!',
     label: 'Mensagens',
     title: 'Mensagens de saudação para amigos',
     description: 'A extensão sorteia e copia a saudação; você cola, envia e registra.',
