@@ -41,6 +41,23 @@
 
     <!-- ======================= INÍCIO (modo simples) ======================= -->
     <section id="view-home" class="view" hidden>
+      <div class="card player">
+        <div class="player-top">
+          <button type="button" class="avatar" id="player-avatar" title="Trocar avatar">🙂</button>
+          <div class="player-info">
+            <div class="player-level">Nível <span id="player-level">1</span> · <span id="player-title">Iniciante</span></div>
+            <div class="xp-bar"><div class="xp-fill" id="player-xp-fill"></div></div>
+            <div class="player-xp"><span id="player-xp">0</span> / <span id="player-xp-next">100</span> XP</div>
+          </div>
+          <div class="streak" id="player-streak" title="Dias seguidos com sessão">🔥 0</div>
+        </div>
+        <div class="badges-row" id="player-badges"></div>
+        <div class="missions">
+          <div class="missions-title">🎯 Missões de hoje</div>
+          <ul id="player-missions"></ul>
+        </div>
+      </div>
+
       <div class="card">
         <div class="step-title"><span class="step-num">1</span><h3>O que vamos fazer?</h3></div>
         <p class="muted">Toque para ligar ou desligar. Pode escolher só um.</p>
@@ -130,6 +147,8 @@
           <div class="confetti" aria-hidden="true">🎉</div>
           <h3>Parabéns! Sessão completa</h3>
           <p class="muted">Você ficou <strong id="summary-total"></strong> no Facebook.</p>
+          <div class="xp-gain" id="reward-xp"></div>
+          <div id="reward-extras"></div>
           <dl class="summary-list" id="summary-list"></dl>
         </div>
         <button type="button" class="btn btn-go" id="btn-new">🔄 Fazer outra</button>

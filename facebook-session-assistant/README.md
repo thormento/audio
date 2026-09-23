@@ -32,6 +32,23 @@ A extensão usa a conta do Facebook que já estiver autenticada no navegador. N�
 
 Tudo que o Início faz também pode ser ajustado em detalhe na aba **Ajustes**, descrita abaixo.
 
+## Jogo: XP, níveis, medalhas e missões
+
+O cartão no topo do Início mostra o jogador: avatar (toque para trocar), nível com título (Iniciante, Curioso, Explorador, Sociável, Conectado, Influente, Veterano, Mestre, Lenda), barra de XP, sequência de dias 🔥, as 14 medalhas (acesas quando conquistadas) e as missões de hoje.
+
+| Ganha XP por | Valor |
+|--------------|-------|
+| Cada minuto de atividade | 1 XP |
+| Curtida registrada | 10 XP |
+| Solicitação registrada | 25 XP |
+| Mensagem registrada | 20 XP |
+| Meta batida | 30 XP |
+| Todas as etapas concluídas (sem pular) | 50 XP |
+| Sessão concluída | 20 XP |
+| Missão diária | 30 a 40 XP, uma vez por dia |
+
+Nível = raiz quadrada de (XP / 100) + 1, então o nível 2 vem com 100 XP, o 3 com 400, o 4 com 900. Medalhas: primeira sessão, 5 e 20 sessões, 3 e 7 dias seguidos, 50 curtidas, 10 amizades, 20 mensagens, 10 horas, sessão perfeita, maratona (1h), faz-tudo (todas as atividades), madrugador (antes das 8h) e coruja (depois das 22h). Missões do dia: fazer 1 sessão, ficar 15 minutos ativo, curtir 5 posts, conversar com 2 amigos. O progresso fica em `chrome.storage.local` (chave `progress`) e pode ser zerado em Opções. Regras em `utils/gamification.js`.
+
 ## Ajustes detalhados (aba Ajustes)
 
 1. **Abra a aba Ajustes** no painel.

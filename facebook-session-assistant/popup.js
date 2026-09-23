@@ -28,6 +28,7 @@ import * as storage from './utils/storage.js';
 import { getCurrentStep, getNextStep, stepRemainingMs, pauseRemainingMs, distributeTotalMinutes } from './utils/session.js';
 import { formatClock, formatDuration, formatDate, formatTime, formatMinutesShort, progress } from './utils/timer.js';
 import { log, error, initLogger } from './utils/logger.js';
+import { levelProgress, BADGES, missionStatus } from './utils/gamification.js';
 
 const $ = (selector) => document.querySelector(selector);
 
@@ -35,6 +36,7 @@ const state = {
   settings: null,
   session: null,
   scheduler: null,
+  progress: null,
   greeting: '',
   history: [],
   profileName: '',
@@ -392,8 +394,54 @@ function buildHome() {
   }).join('');
 }
 
+const AVATARS = ['🙂', '😎', '🦊', '🐼', '🐯', '🦄', '🐸', '🤖', '👾', '🐨', '🦁', '🐙'];
+
+/** Cartão do jogador: nível, XP, sequência, medalhas e missões. */
+function renderPlayer() {
+  const p = state.progress;
+  if (!p) return;
+  const lp = levelProgress(p.xp);
+  $('#player-avatar').textContent = p.avatar || '🙂';
+  $('#player-level').textContent = lp.level;
+  $('#player-title').textContent = lp.title;
+  $('#player-xp').textContent = lp.current;
+  $('#player-xp-next').textContent = lp.needed;
+  $('#player-xp-fill').style.width = `${lp.ratio * 100}%`;
+  $('#player-streak').textContent = `🔥 ${p.streak}`;
+  $('#player-streak').title = `${p.streak} dia(s) seguido(s) com sessão. Recorde: ${p.bestStreak}`;
+  $('#player-badges').innerHTML = BADGES.map(
+    (b) => `<span class="badge ${p.badges[b.id] ? '' : 'locked'}" title="${escapeHtml(b.name)}: ${escapeHtml(b.description)}">${b.emoji}</span>`
+  ).join('');
+  $('#player-missions').innerHTML = missionStatus(p, state.history).map(
+    (m) => `<li class="mission ${m.done ? 'done' : ''}">
+      <span>${m.done ? '✅' : m.emoji}</span>
+      <span class="m-name">${escapeHtml(m.name)}</span>
+      <span class="m-progress">${m.current}/${m.target} · +${m.xp} XP</span>
+    </li>`
+  ).join('');
+}
+
+function renderRewards(session) {
+  const r = session.rewards;
+  const xpBox = $('#reward-xp');
+  const extras = $('#reward-extras');
+  if (!r) {
+    xpBox.textContent = '';
+    extras.innerHTML = '';
+    return;
+  }
+  xpBox.textContent = `+${r.xpGained} XP`;
+  const lines = [];
+  if (r.levelUp) lines.push(`<span class="reward-line level">⬆️ Subiu para o nível ${r.levelAfter}!</span>`);
+  if (r.streak > 1) lines.push(`<span class="reward-line">🔥 ${r.streak} dias seguidos</span>`);
+  (r.newBadges || []).forEach((b) => lines.push(`<span class="reward-line badge-new">${b.emoji} Nova medalha: ${escapeHtml(b.name)}</span>`));
+  (r.missionsCompleted || []).forEach((m) => lines.push(`<span class="reward-line mission-done">${m.emoji} Missão: ${escapeHtml(m.name)}</span>`));
+  extras.innerHTML = lines.join('');
+}
+
 /** Reflete o formulário de Ajustes nos controles do Início. */
 function renderHome() {
+  renderPlayer();
   const form = readForm();
   document.querySelectorAll('[data-tile]').forEach((tile) => {
     const cfg = form[tile.dataset.tile] || {};
@@ -739,7 +787,10 @@ function render() {
     $('#session-finished').hidden = status !== SESSION_STATUS.FINISHED;
     if (status === SESSION_STATUS.READY) renderReady(session);
     if (status === SESSION_STATUS.RUNNING || status === SESSION_STATUS.PAUSED) renderLive(session);
-    if (status === SESSION_STATUS.FINISHED) renderFinished(session);
+    if (status === SESSION_STATUS.FINISHED) {
+      renderFinished(session);
+      renderRewards(session);
+    }
   }
 
   if (state.view === 'history') renderHistory();
@@ -793,6 +844,16 @@ function bindEvents() {
     applyHomeChange();
   });
   $('#btn-go').addEventListener('click', () => startFromHome());
+  $('#player-avatar').addEventListener('click', async () => {
+    const current = state.progress ? state.progress.avatar : AVATARS[0];
+    const next = AVATARS[(AVATARS.indexOf(current) + 1) % AVATARS.length];
+    try {
+      state.progress = await send('progress:setAvatar', { avatar: next });
+      renderPlayer();
+    } catch (err) {
+      toast(err.message, 'error');
+    }
+  });
   $('#btn-plan').addEventListener('click', () => startFromHome({ onlyPlan: true }));
 
   $('#view-config').addEventListener('change', (event) => {
@@ -898,12 +959,17 @@ function bindEvents() {
       state.session = changes[STORAGE_KEYS.SESSION].newValue || null;
       render();
     }
+    if (changes[STORAGE_KEYS.PROGRESS]) {
+      state.progress = changes[STORAGE_KEYS.PROGRESS].newValue || null;
+      if (state.view === 'home') renderPlayer();
+    }
     if (changes[STORAGE_KEYS.SCHEDULER]) {
       state.scheduler = changes[STORAGE_KEYS.SCHEDULER].newValue || null;
       renderScheduler();
     }
     if (changes[STORAGE_KEYS.HISTORY]) {
       state.history = changes[STORAGE_KEYS.HISTORY].newValue || [];
+      if (state.view === 'home') renderPlayer();
       if (state.view === 'history') render();
     }
     if (changes[STORAGE_KEYS.PROFILES] || changes[STORAGE_KEYS.ACTIVE_PROFILE]) {
@@ -975,6 +1041,7 @@ async function init() {
     fillForm();
     state.session = await storage.getSession();
     state.scheduler = await storage.getScheduler();
+    state.progress = await storage.getProgress();
     state.history = await storage.getHistory();
     // Pede ao service worker uma verificação: acorda-o e sincroniza prazos.
     send('session:check')

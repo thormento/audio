@@ -37,6 +37,7 @@ import {
 import { formatClock, formatDuration, minutesToMs } from './utils/timer.js';
 import { randomBetween } from './utils/random.js';
 import { randomGreeting } from './utils/messages.js';
+import { awardSession } from './utils/gamification.js';
 import { log, warn, error, initLogger } from './utils/logger.js';
 
 initLogger();
@@ -285,14 +286,30 @@ async function finishSession(session) {
 
   await clearStepAlarms();
   await stopWatchdog();
+  let history = [];
   try {
-    await storage.addHistoryEntry(summaryToHistoryEntry(session, summary));
+    history = await storage.addHistoryEntry(summaryToHistoryEntry(session, summary));
   } catch (err) {
     error('Falha ao gravar histórico', err);
   }
 
+  // Recompensas do jogo (XP, nível, medalhas, missões)
+  try {
+    const progress = await storage.getProgress();
+    const { progress: updated, rewards } = awardSession(progress, session, summary, history);
+    await storage.saveProgress(updated);
+    session.rewards = rewards;
+    const extras = [];
+    if (rewards.levelUp) extras.push(`Subiu para o nível ${rewards.levelAfter}!`);
+    if (rewards.newBadges.length) extras.push(`Nova medalha: ${rewards.newBadges.map((b) => `${b.emoji} ${b.name}`).join(', ')}.`);
+    log(`Recompensas: +${rewards.xpGained} XP`, extras.join(' '));
+    notify('Sessão concluída', `+${rewards.xpGained} XP em ${formatDuration(summary.totalMs)}. ${extras.join(' ')}`.trim());
+  } catch (err) {
+    error('Falha ao calcular recompensas', err);
+    notify('Sessão concluída', `Duração total: ${formatDuration(summary.totalMs)}.`);
+  }
+
   log(`Sessão finalizada. Duração total: ${formatDuration(summary.totalMs)}`);
-  notify('Sessão concluída', `Duração total: ${formatDuration(summary.totalMs)}.`);
   await armScheduler();
   return session;
 }
@@ -770,6 +787,14 @@ const handlers = {
   'session:registerGoal': async (message) => registerGoal(message.goal),
   'session:reopenTab': reopenTab,
   'messages:suggest': suggestGreeting,
+  'progress:get': async () => storage.getProgress(),
+  'progress:setAvatar': async (message) => {
+    const progress = await storage.getProgress();
+    const avatar = typeof message.avatar === 'string' ? message.avatar.slice(0, 4) : progress.avatar;
+    progress.avatar = avatar;
+    await storage.saveProgress(progress);
+    return storage.getProgress();
+  },
   'scheduler:get': async () => storage.getScheduler(),
   'scheduler:sync': syncScheduler,
   'scheduler:stop': async () => stopScheduler('pedido do usuário'),

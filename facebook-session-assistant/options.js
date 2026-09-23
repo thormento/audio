@@ -9,6 +9,7 @@ import * as storage from './utils/storage.js';
 import { formatDate, formatTime, formatDuration, formatMinutesShort } from './utils/timer.js';
 import { log, error, initLogger } from './utils/logger.js';
 import { GREETINGS } from './utils/messages.js';
+import { levelProgress, BADGES } from './utils/gamification.js';
 
 const $ = (selector) => document.querySelector(selector);
 
@@ -62,6 +63,15 @@ async function savePrefsFromForm() {
     debugLogs: $('#pref-logs').checked
   });
   toast('Preferências salvas.', 'success');
+}
+
+/* Progresso do jogo ------------------------------------------ */
+
+async function renderProgress() {
+  const p = await storage.getProgress();
+  const lp = levelProgress(p.xp);
+  const badges = Object.keys(p.badges).length;
+  $('#progress-summary').textContent = `${p.avatar} Nível ${lp.level} (${lp.title}) · ${p.xp} XP · ${p.sessions} sessões · sequência ${p.streak} dia(s), recorde ${p.bestStreak} · ${badges}/${BADGES.length} medalhas.`;
 }
 
 /* Histórico -------------------------------------------------- */
@@ -137,16 +147,24 @@ function bindEvents() {
     toast('Histórico limpo.', 'success');
   });
 
+  $('#btn-reset-progress').addEventListener('click', async () => {
+    if (!confirm('Zerar XP, nível, sequência e medalhas? O histórico de sessões é mantido.')) return;
+    await storage.resetProgress();
+    await renderProgress();
+    toast('Progresso do jogo zerado.', 'success');
+  });
+
   $('#btn-reset-all').addEventListener('click', async () => {
     if (!confirm('Apagar TODOS os dados da extensão? Esta ação não pode ser desfeita.')) return;
     await storage.resetAll();
-    await Promise.all([renderProfiles(), renderPrefs(), renderHistory()]);
+    await Promise.all([renderProfiles(), renderPrefs(), renderHistory(), renderProgress()]);
     toast('Dados restaurados para o padrão.', 'success');
   });
 
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area !== 'local') return;
     if (changes[STORAGE_KEYS.HISTORY]) renderHistory();
+    if (changes[STORAGE_KEYS.PROGRESS]) renderProgress();
     if (changes[STORAGE_KEYS.PROFILES] || changes[STORAGE_KEYS.ACTIVE_PROFILE]) renderProfiles();
   });
 }
@@ -161,7 +179,7 @@ async function init() {
   $('#app-name').textContent = APP_NAME;
   bindEvents();
   try {
-    await Promise.all([renderProfiles(), renderPrefs(), renderHistory()]);
+    await Promise.all([renderProfiles(), renderPrefs(), renderHistory(), renderProgress()]);
   } catch (err) {
     error('Falha ao carregar opções', err);
     toast('Não foi possível carregar as opções.', 'error');

@@ -24,7 +24,8 @@ export const STORAGE_KEYS = {
   SESSION: 'session',
   HISTORY: 'history',
   PREFS: 'prefs',
-  SCHEDULER: 'scheduler'
+  SCHEDULER: 'scheduler',
+  PROGRESS: 'progress'
 };
 
 /** Nomes dos alarmes criados com chrome.alarms. */

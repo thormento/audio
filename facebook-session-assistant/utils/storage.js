@@ -29,6 +29,7 @@ import {
   REPEAT_MODES
 } from './constants.js';
 import { log, warn, error } from './logger.js';
+import { normalizeProgress } from './gamification.js';
 
 /* ------------------------------------------------------------ */
 /* Helpers básicos                                              */
@@ -495,4 +496,22 @@ export async function resetAll() {
   }
   await ensureInitialized();
   log('Todos os dados foram restaurados para o padrão.');
+}
+
+/* ------------------------------------------------------------ */
+/* Progresso do jogo (XP, nível, medalhas)                      */
+/* ------------------------------------------------------------ */
+
+export async function getProgress() {
+  const data = await read(STORAGE_KEYS.PROGRESS);
+  return normalizeProgress(data[STORAGE_KEYS.PROGRESS]);
+}
+
+export async function saveProgress(progress) {
+  return write({ [STORAGE_KEYS.PROGRESS]: normalizeProgress(progress) });
+}
+
+export async function resetProgress() {
+  await write({ [STORAGE_KEYS.PROGRESS]: normalizeProgress(null) });
+  log('Progresso do jogo zerado.');
 }
