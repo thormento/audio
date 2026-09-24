@@ -542,6 +542,17 @@ document.addEventListener('DOMContentLoaded', function () {
 	$('#btngettoken').click(function(){
 		 getToken();
 	})
+	$('#btnrolarfeed').click(function(){
+		getCurrentTab().then(tab2=>{
+			chrome.tabs.sendMessage(tab2.id, { action: 'rolarFeed' }, function (resp) {
+				if (chrome.runtime.lastError) {
+					console.log('Erro ao rolar feed:', chrome.runtime.lastError.message);
+				} else {
+					setTimeout(function () { window.close(); }, 500);
+				}
+			});
+		});
+	})
 });
 function addNewAccItem(acc) {
 	try{

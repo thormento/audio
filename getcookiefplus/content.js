@@ -560,6 +560,29 @@
     } catch (e) {}
   }
 
+  // Listener para mensagens do popup (rolar feed)
+  chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+    if (msg && msg.action === "rolarFeed") {
+      rolarFeedAuto();
+      sendResponse({ ok: true });
+    }
+  });
+
+  async function rolarFeedAuto() {
+    const duracao = Math.random() * (15000 - 5000) + 5000; // 5-15 segundos aleatório
+    const velocidade = Math.random() * (80 - 40) + 40; // 40-80px por ciclo aleatório
+    const intervalo = 400; // ms entre cada scroll
+
+    const inicio = Date.now();
+    const limite = inicio + duracao;
+
+    while (Date.now() < limite) {
+      const scroll = Math.random() * velocidade;
+      window.scrollBy(0, scroll);
+      await dormir(intervalo);
+    }
+  }
+
   if (document.readyState === "loading") {
     window.addEventListener("DOMContentLoaded", iniciar);
   } else {
