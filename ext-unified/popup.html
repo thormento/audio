@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Facebook Session Assistant</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand">
+      <img src="icons/icon48.png" alt="" width="34" height="34">
+      <div>
+        <h1 id="app-name">Facebook Pro</h1>
+        <div class="status-line">
+          <span class="status-dot" id="status-dot"></span>
+          <span id="status-label">Pronto para começar</span>
+        </div>
+      </div>
+    </div>
+    <button type="button" class="icon-btn" id="open-options" title="Mais opções" aria-label="Abrir opções">⚙️</button>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button type="button" class="tab active" data-view="home" role="tab">🏠 Sessões</button>
+    <button type="button" class="tab" data-view="pages" role="tab">📄 Criar Páginas</button>
+    <button type="button" class="tab" data-view="settings" role="tab">🛠️ Ajustes</button>
+    <button type="button" class="tab" data-view="history" role="tab">📜 Histórico</button>
+  </nav>
+
+  <main id="main">
+    <div id="scheduler-banner" class="scheduler" hidden>
+      <div class="scheduler-text">
+        <strong>🔁 Repetindo sozinho</strong>
+        <span id="scheduler-detail"></span>
+      </div>
+      <div class="scheduler-actions">
+        <button type="button" class="btn btn-small btn-primary" id="btn-run-now">Começar já</button>
+        <button type="button" class="btn btn-small btn-ghost" id="btn-stop-repeat">Parar</button>
+      </div>
+    </div>
+
+    <!-- ======================= INÍCIO (modo simples) ======================= -->
+    <section id="view-home" class="view" hidden>
+      <div class="card player">
+        <div class="player-top">
+          <button type="button" class="avatar" id="player-avatar" title="Trocar avatar">🙂</button>
+          <div class="player-info">
+            <div class="player-level">Nível <span id="player-level">1</span> · <span id="player-title">Iniciante</span></div>
+            <div class="xp-bar"><div class="xp-fill" id="player-xp-fill"></div></div>
+            <div class="player-xp"><span id="player-xp">0</span> / <span id="player-xp-next">100</span> XP</div>
+          </div>
+          <div class="streak" id="player-streak" title="Dias seguidos com sessão">🔥 0</div>
+        </div>
+        <div class="badges-row" id="player-badges"></div>
+        <div class="missions">
+          <div class="missions-title">🎯 Missões de hoje</div>
+          <ul id="player-missions"></ul>
+        </div>
+      </div>
+
+      <div class="card stats" id="stats-card">
+        <div class="card-head">
+          <h3>📊 Suas estatísticas</h3>
+          <span class="pill" id="stats-day">Dia 0</span>
+        </div>
+        <div class="stats-total">
+          <div class="stats-total-value" id="stats-total">0 min</div>
+          <div class="stats-total-label">de atividades no total · <span id="stats-days">0</span> dia(s) com sessão · <span id="stats-sessions">0</span> sessões</div>
+        </div>
+        <div class="stats-grid" id="stats-activities"></div>
+        <p class="muted small" id="stats-note"></p>
+      </div>
+
+      <div class="card">
+        <div class="step-title"><span class="step-num">1</span><h3>O que vamos fazer?</h3></div>
+        <p class="muted">Toque para ligar ou desligar. Pode escolher só um.</p>
+        <div class="tiles" id="home-tiles"></div>
+      </div>
+
+      <div class="card">
+        <div class="step-title"><span class="step-num">2</span><h3>Quanto tempo?</h3></div>
+        <div class="chips big" id="home-time"></div>
+        <p class="muted small" id="home-time-note"></p>
+      </div>
+
+      <div class="card">
+        <div class="step-title"><span class="step-num">3</span><h3>Repetir sozinho?</h3></div>
+        <p class="muted">Quando acabar, espera esse tempo e começa de novo.</p>
+        <div class="chips big" id="home-repeat"></div>
+      </div>
+
+      <button type="button" class="btn btn-go" id="btn-go">▶ COMEÇAR AGORA</button>
+      <button type="button" class="btn btn-secondary btn-wide" id="btn-plan">👀 Ver o plano antes</button>
+
+      <div class="card help">
+        <h3>Como funciona</h3>
+        <ol class="help-steps">
+          <li>🎯 Você escolhe o que fazer e por quanto tempo.</li>
+          <li>🌐 A extensão abre a página certa e conta o tempo.</li>
+          <li>👍 Você curte, conversa e marca no botão. Ela nunca faz isso por você.</li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- ======================= SESSÃO ======================= -->
+    <section id="view-session" class="view" hidden>
+      <div id="session-warning" class="warning" hidden>
+        <span id="session-warning-text"></span>
+        <button type="button" class="btn btn-small" id="btn-reopen" hidden>Reabrir aba</button>
+      </div>
+
+      <!-- Plano pronto (aguardando início) -->
+      <div id="session-ready" hidden>
+        <div class="card">
+          <h3>📋 Plano da sessão</h3>
+          <p class="muted">Tempo total: <strong id="ready-total"></strong></p>
+          <p class="muted small" id="ready-mode"></p>
+          <ol class="step-list" id="ready-steps"></ol>
+          <div class="goal-summary" id="ready-goals"></div>
+        </div>
+        <button type="button" class="btn btn-go" id="btn-start">▶ COMEÇAR</button>
+        <div class="actions">
+          <button type="button" class="btn btn-secondary" id="btn-regenerate">🎲 Sortear de novo</button>
+          <button type="button" class="btn btn-ghost" id="btn-discard">Voltar</button>
+        </div>
+      </div>
+
+      <!-- Sessão em execução / pausada -->
+      <div id="session-live" hidden>
+        <div class="card hero">
+          <div class="hero-top">
+            <span class="eyebrow">Agora</span>
+            <span class="pill" id="live-step-counter">Etapa 1 / 5</span>
+          </div>
+          <div class="hero-activity"><span class="hero-emoji" id="live-emoji">📰</span><span id="live-activity">FEED</span></div>
+          <div class="hero-instruction" id="live-instruction"></div>
+          <div class="hero-remaining" id="live-remaining">05:42</div>
+          <div class="hero-sub"><span id="live-phase-label">Tempo restante</span> · de <span id="live-drawn">08:00</span></div>
+          <div class="progress"><div class="progress-bar" id="live-progress"></div></div>
+          <p class="muted small" id="live-next">Depois: Reels</p>
+          <p class="muted small">Sessão inteira: <strong id="live-total"></strong></p>
+        </div>
+
+        <div class="card">
+          <h3>Marque o que você fez</h3>
+          <div class="goal-rows" id="live-goals"></div>
+        </div>
+
+        <div class="actions">
+          <button type="button" class="btn btn-secondary" id="btn-pause">⏸ Pausar</button>
+          <button type="button" class="btn btn-primary" id="btn-resume" hidden>▶ Continuar</button>
+          <button type="button" class="btn btn-secondary" id="btn-skip">⏭ Pular</button>
+        </div>
+        <button type="button" class="btn btn-danger btn-wide" id="btn-finish">⏹ Parar tudo</button>
+      </div>
+
+      <!-- Sessão finalizada -->
+      <div id="session-finished" hidden>
+        <div class="card celebrate">
+          <div class="confetti" aria-hidden="true">🎉</div>
+          <h3>Parabéns! Sessão completa</h3>
+          <p class="muted">Você ficou <strong id="summary-total"></strong> no Facebook.</p>
+          <div class="xp-gain" id="reward-xp"></div>
+          <div id="reward-extras"></div>
+          <dl class="summary-list" id="summary-list"></dl>
+        </div>
+        <button type="button" class="btn btn-go" id="btn-new">🔄 Fazer outra</button>
+      </div>
+    </section>
+
+    <!-- ======================= AJUSTES (avançado) ======================= -->
+    <section id="view-config" class="view" hidden>
+      <div class="profile-line">
+        <span>Perfil ativo:</span>
+        <strong id="profile-name">Perfil 1</strong>
+      </div>
+      <p class="muted small settings-intro">Aqui ficam os ajustes detalhados. O Início usa estes mesmos valores.</p>
+
+      <div class="card">
+        <div class="card-head">
+          <h3>Quais atividades executar</h3>
+          <span class="pill-muted" id="activity-count">6 de 6</span>
+        </div>
+        <div class="checklist" id="activity-checklist"></div>
+        <p class="muted small hint">Outra forma de pular uma atividade: deixe o tempo máximo em <strong>0</strong> (ou a participação em <strong>0%</strong> no modo de tempo total).</p>
+      </div>
+
+      <div class="card">
+        <h3>Duração das atividades</h3>
+        <div class="mode-switch" role="radiogroup">
+          <label class="mode-option">
+            <input type="radio" name="duration-mode" value="random">
+            <span>🎲 Sortear entre mín. e máx.</span>
+          </label>
+          <label class="mode-option">
+            <input type="radio" name="duration-mode" value="total">
+            <span>⏱️ Tempo total dividido</span>
+          </label>
+        </div>
+        <div id="total-config" hidden>
+          <p class="muted small">Escolha o tempo total e ajuste a fatia de cada atividade nas barras abaixo.</p>
+          <div class="chips" id="total-presets"></div>
+          <div class="range-row single">
+            <label>
+              <span>Outro valor</span>
+              <input type="number" id="opt-total-minutes" min="1" step="1" data-simple="totalMinutes">
+            </label>
+            <span class="unit">minutos</span>
+          </div>
+          <div class="distribution" id="distribution-preview"></div>
+        </div>
+      </div>
+
+      <div id="activity-cards"></div>
+      <div id="goal-cards"></div>
+
+      <div class="card">
+        <h3>Sessão</h3>
+        <label class="check-row">
+          <input type="checkbox" id="opt-shuffle">
+          <span>Embaralhar a ordem das atividades</span>
+        </label>
+        <label class="check-row">
+          <input type="checkbox" id="opt-pauses">
+          <span>Fazer uma pausa entre as atividades</span>
+        </label>
+        <div class="range-row" id="pause-range">
+          <label>
+            <span>Pausa mínima</span>
+            <input type="number" id="opt-pause-min" min="0" step="1" data-field="pauses.min">
+          </label>
+          <label>
+            <span>Pausa máxima</span>
+            <input type="number" id="opt-pause-max" min="0" step="1" data-field="pauses.max">
+          </label>
+          <span class="unit">segundos</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h3>Repetir automaticamente</h3>
+            <p class="desc">Com o navegador aberto, ao terminar uma sessão a extensão espera o intervalo e inicia outra sozinha, com novos sorteios.</p>
+          </div>
+          <div class="toggle-wrap">
+            <div class="run-label">Ativo: <strong id="repeat-label">Não</strong></div>
+            <label class="switch" title="Repetir automaticamente">
+              <input type="checkbox" id="opt-repeat" data-field="autoRepeat.enabled">
+              <span></span>
+            </label>
+          </div>
+        </div>
+        <div id="repeat-config">
+          <div class="mode-switch" role="radiogroup">
+            <label class="mode-option">
+              <input type="radio" name="repeat-mode" value="fixed">
+              <span>A cada X minutos</span>
+            </label>
+            <label class="mode-option">
+              <input type="radio" name="repeat-mode" value="random">
+              <span>Intervalo aleatório</span>
+            </label>
+          </div>
+          <div id="repeat-fixed">
+            <div class="chips" id="repeat-presets"></div>
+            <div class="range-row single">
+              <label>
+                <span>Esperar entre uma sessão e a próxima</span>
+                <input type="number" min="1" step="1" data-field="autoRepeat.minutes">
+              </label>
+              <span class="unit">minutos</span>
+            </div>
+          </div>
+          <div id="repeat-random" class="range-row">
+            <label>
+              <span>Espera mínima</span>
+              <input type="number" min="1" step="1" data-field="autoRepeat.min">
+            </label>
+            <label>
+              <span>Espera máxima</span>
+              <input type="number" min="1" step="1" data-field="autoRepeat.max">
+            </label>
+            <span class="unit">minutos</span>
+          </div>
+          <p class="muted small hint">O intervalo conta a partir do fim da sessão anterior. A repetição começa quando você inicia uma sessão e continua até você clicar em "Parar".</p>
+        </div>
+      </div>
+
+      <div id="form-errors" class="errors" hidden></div>
+
+      <div class="actions">
+        <button type="button" class="btn btn-secondary" id="btn-save">💾 Salvar</button>
+        <button type="button" class="btn btn-primary" id="btn-generate">👀 Ver o plano</button>
+      </div>
+    </section>
+
+    <!-- ======================= CRIAR PÁGINAS ======================= -->
+    <section id="view-pages" class="view" hidden>
+      <div class="card">
+        <div class="card-head">
+          <h3>📄 Criar Páginas do Facebook</h3>
+          <span class="pill" id="pages-count">0 criadas</span>
+        </div>
+        <p class="muted">Automação para criar páginas no Facebook com nomes aleatórios.</p>
+      </div>
+
+      <div class="card">
+        <h3>Configuração</h3>
+        <div class="form-group">
+          <label for="pages-quantity">Quantidade de páginas a criar</label>
+          <input type="number" id="pages-quantity" min="1" max="100" value="1" class="input-field">
+        </div>
+        <div class="form-group">
+          <label class="check-row">
+            <input type="checkbox" id="pages-use-file" checked>
+            <span>Usar lista do arquivo nomes.txt</span>
+          </label>
+          <p class="muted small hint">Se desativado, gera nomes aleatórios.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Status da automação</h3>
+        <div id="pages-status" class="status-box">
+          <p class="muted">Aguardando início</p>
+        </div>
+        <div id="pages-log" class="log-box" hidden></div>
+      </div>
+
+      <button type="button" class="btn btn-go" id="btn-start-pages">▶ COMEÇAR</button>
+      <button type="button" class="btn btn-secondary btn-wide" id="btn-stop-pages" hidden>⏹ Parar</button>
+    </section>
+
+    <!-- ======================= HISTÓRICO ======================= -->
+    <section id="view-history" class="view" hidden>
+      <div class="card">
+        <div class="card-head">
+          <h3>📜 Histórico</h3>
+          <button type="button" class="btn btn-small btn-ghost" id="btn-clear-history">Limpar</button>
+        </div>
+        <p class="muted small">Últimas <span id="history-limit">30</span> sessões, guardadas só neste computador.</p>
+        <div id="history-list"></div>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" hidden></div>
+
+  <script type="module" src="popup.js"></script>
+</body>
+</html>
