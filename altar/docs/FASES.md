@@ -2,7 +2,18 @@
 
 Uma fase por sessão. Uma fase, um objetivo, um commit. Nunca avance sem pedido explícito. Os prompts completos de cada fase estão em `docs/ROTEIRO.md`.
 
-Fase atual: **1 concluída**. Próxima: **2**. Como testar a fase 1: `docs/FASE1.md`.
+## Ordem decidida pelo produto
+
+O app do leitor sai primeiro; o lado da igreja vem depois, sem desfazer nada.
+
+| Bloco | Fases | Estado |
+| --- | --- | --- |
+| Base | 0, 1 | concluídas (`docs/FASE1.md`) |
+| Leitor | 5, 6, 7, 8 | concluídas (`docs/LEITOR.md`) |
+| Igreja | 2, 3, 4, 9 | próximas, nesta ordem |
+| Fechamento | 10 | por último |
+
+Fase atual: **bloco do leitor concluído**. Próxima: **2** (comunicados e oração).
 
 ## Fase 0 — Spec e esqueleto
 

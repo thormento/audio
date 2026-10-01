@@ -14,6 +14,7 @@ class _SignUpPageState extends State<SignUpPage> {
   final _name = TextEditingController();
   final _email = TextEditingController();
   final _password = TextEditingController();
+  final _referral = TextEditingController();
   bool _consent = false;
   bool _busy = false;
 
@@ -22,6 +23,7 @@ class _SignUpPageState extends State<SignUpPage> {
     _name.dispose();
     _email.dispose();
     _password.dispose();
+    _referral.dispose();
     super.dispose();
   }
 
@@ -42,6 +44,7 @@ class _SignUpPageState extends State<SignUpPage> {
         email: _email.text,
         password: _password.text,
         consentAccount: _consent,
+        referralCode: _referral.text,
       );
       if (mounted) Navigator.of(context).pop();
     } on AuthFailure catch (e) {
@@ -100,6 +103,17 @@ class _SignUpPageState extends State<SignUpPage> {
                       validator: (v) => (v == null || v.length < 6)
                           ? 'A senha precisa ter pelo menos 6 caracteres'
                           : null,
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _referral,
+                      textCapitalization: TextCapitalization.characters,
+                      maxLength: 6,
+                      decoration: const InputDecoration(
+                        labelText: 'Código de indicação (opcional)',
+                        helperText: 'Quem te indicou ganha pontos.',
+                        counterText: '',
+                      ),
                     ),
                     const SizedBox(height: 16),
                     CheckboxListTile(

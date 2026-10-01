@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../app/routes.dart';
 import '../auth_repository.dart';
 import 'sign_up_page.dart';
 
@@ -124,6 +125,9 @@ class _SignInPageState extends State<SignInPage> {
                           ? null
                           : () => Navigator.of(context).push(
                                 MaterialPageRoute<void>(
+                                  settings: const RouteSettings(
+                                    name: AppRoutes.signUp,
+                                  ),
                                   builder: (_) => const SignUpPage(),
                                 ),
                               ),

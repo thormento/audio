@@ -40,6 +40,11 @@ dependencies:
   firebase_auth: ^6.7.0
   cloud_firestore: ^6.10.0
   google_sign_in: ^7.2.0
+  share_plus: ^13.3.1
+  google_mobile_ads: ^9.1.0
+  path_provider: ^2.1.6
+  device_info_plus: ^13.3.0
+  intl: ^0.20.3
 
 dev_dependencies:
   flutter_test:
@@ -57,11 +62,10 @@ dev_dependencies:
 
 # The following section is specific to Flutter packages.
 flutter:
-
-  # The following line ensures that the Material Icons font is
-  # included with your application, so that you can use the icons in
-  # the material Icons class.
   uses-material-design: true
+  assets:
+    - assets/seed/verses.json
+    - assets/seed/quizzes.json
 
   # To add assets to your application, add an assets section, like this:
   # assets:

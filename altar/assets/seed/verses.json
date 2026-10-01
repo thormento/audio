@@ -1,0 +1,26 @@
+{
+  "source": "João Ferreira de Almeida, edição de 1911 (domínio público). Revisar cada texto contra a edição impressa antes de publicar.",
+  "verses": [
+    {"id": "manha-01", "slot": "manha", "reference": "Lamentações 3:22-23", "text": "As misericórdias do Senhor são a causa de não sermos consumidos, porque as suas misericórdias não têm fim; novas são cada manhã; grande é a tua fidelidade."},
+    {"id": "manha-02", "slot": "manha", "reference": "Salmos 5:3", "text": "Pela manhã ouvirás a minha voz, ó Senhor; pela manhã apresentarei a ti a minha oração, e vigiarei."},
+    {"id": "manha-03", "slot": "manha", "reference": "Salmos 143:8", "text": "Faze-me ouvir a tua benignidade pela manhã, pois em ti confio; faze-me saber o caminho que devo seguir, porque a ti levanto a minha alma."},
+    {"id": "manha-04", "slot": "manha", "reference": "Salmos 90:14", "text": "Farta-nos de madrugada com a tua benignidade, para que nos regozijemos e nos alegremos todos os nossos dias."},
+    {"id": "manha-05", "slot": "manha", "reference": "Salmos 118:24", "text": "Este é o dia que fez o Senhor; regozijemo-nos e alegremo-nos nele."},
+    {"id": "manha-06", "slot": "manha", "reference": "Isaías 40:31", "text": "Mas os que esperam no Senhor renovarão as suas forças; subirão com asas como águias; correrão e não se cansarão; caminharão e não se fatigarão."},
+    {"id": "manha-07", "slot": "manha", "reference": "Provérbios 3:5-6", "text": "Confia no Senhor de todo o teu coração e não te estribes no teu próprio entendimento. Reconhece-o em todos os teus caminhos, e ele endireitará as tuas veredas."},
+    {"id": "tarde-01", "slot": "tarde", "reference": "Salmos 23:1", "text": "O Senhor é o meu pastor; nada me faltará."},
+    {"id": "tarde-02", "slot": "tarde", "reference": "Mateus 11:28", "text": "Vinde a mim, todos os que estais cansados e oprimidos, e eu vos aliviarei."},
+    {"id": "tarde-03", "slot": "tarde", "reference": "Filipenses 4:13", "text": "Posso todas as coisas naquele que me fortalece."},
+    {"id": "tarde-04", "slot": "tarde", "reference": "Salmos 46:1", "text": "Deus é o nosso refúgio e fortaleza, socorro bem presente na angústia."},
+    {"id": "tarde-05", "slot": "tarde", "reference": "Isaías 41:10", "text": "Não temas, porque eu sou contigo; não te assombres, porque eu sou o teu Deus; eu te fortaleço, e te ajudo, e te sustento com a destra da minha justiça."},
+    {"id": "tarde-06", "slot": "tarde", "reference": "Josué 1:9", "text": "Não to mandei eu? Esforça-te e tem bom ânimo; não temas, nem te espantes, porque o Senhor, teu Deus, é contigo por onde quer que andares."},
+    {"id": "tarde-07", "slot": "tarde", "reference": "Salmos 121:1-2", "text": "Elevo os meus olhos para os montes: de onde me virá o socorro? O meu socorro vem do Senhor, que fez o céu e a terra."},
+    {"id": "noite-01", "slot": "noite", "reference": "Salmos 4:8", "text": "Em paz também me deitarei e dormirei, porque só tu, Senhor, me fazes habitar em segurança."},
+    {"id": "noite-02", "slot": "noite", "reference": "Salmos 91:1", "text": "Aquele que habita no esconderijo do Altíssimo, à sombra do Onipotente descansará."},
+    {"id": "noite-03", "slot": "noite", "reference": "Salmos 127:2", "text": "Inútil vos será levantar de madrugada, repousar tarde, comer o pão de dores, pois assim dá ele aos seus amados o sono."},
+    {"id": "noite-04", "slot": "noite", "reference": "Mateus 6:34", "text": "Não vos inquieteis, pois, pelo dia de amanhã, porque o dia de amanhã cuidará de si mesmo. Basta a cada dia o seu mal."},
+    {"id": "noite-05", "slot": "noite", "reference": "Filipenses 4:6-7", "text": "Não estejais inquietos por coisa alguma; antes, as vossas petições sejam em tudo conhecidas diante de Deus, pela oração e súplicas, com ação de graças. E a paz de Deus, que excede todo o entendimento, guardará os vossos corações e os vossos sentimentos em Cristo Jesus."},
+    {"id": "noite-06", "slot": "noite", "reference": "Salmos 63:6", "text": "Quando me lembro de ti na minha cama, e medito em ti nas vigílias da noite."},
+    {"id": "noite-07", "slot": "noite", "reference": "João 14:27", "text": "Deixo-vos a paz, a minha paz vos dou; não vo-la dou como o mundo a dá. Não se turbe o vosso coração, nem se atemorize."}
+  ]
+}

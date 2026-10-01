@@ -1,8 +1,8 @@
 rules_version = '2';
 
-// Regras do Altar, Fase 1.
+// Regras do Altar.
 // Princípios: fiel só lê a própria igreja; não lê membros de outra;
-// o papel que vale é o de churches/{id}/members/{uid}.
+// o papel que vale é o de churches/{id}/members/{uid}; pontos só sobem.
 service cloud.firestore {
   match /databases/{db}/documents {
 
@@ -34,6 +34,10 @@ service cloud.firestore {
       return isMember(churchId) && memberRole(churchId) in ['pastor', 'churchAdmin'];
     }
 
+    function changedKeys() {
+      return request.resource.data.diff(resource.data).affectedKeys();
+    }
+
     // users/{uid}: só o dono lê e escreve. Nunca aceita CPF.
     match /users/{userId} {
       allow read: if signedIn() && uid() == userId;
@@ -45,23 +49,84 @@ service cloud.firestore {
         && request.resource.data.consentAccount == true
         && !('cpf' in request.resource.data)
         && !('churchId' in request.resource.data)
-        && !('role' in request.resource.data);
+        && !('role' in request.resource.data)
+        && (!('points' in request.resource.data) || request.resource.data.points == 0);
 
       // churchId e role só mudam junto com o doc de membro correspondente,
-      // na mesma transação ou batch (getAfter).
+      // na mesma transação ou batch (getAfter). Pontos nunca diminuem.
       allow update: if signedIn()
         && uid() == userId
         && !('cpf' in request.resource.data)
         && (
-          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['churchId', 'role'])
+          !changedKeys().hasAny(['churchId', 'role'])
           || (
             request.resource.data.churchId is string
             && getAfter(memberPath(request.resource.data.churchId, userId)).data.role
                == request.resource.data.role
           )
+        )
+        && (
+          !changedKeys().hasAny(['points'])
+          || request.resource.data.points >= resource.data.get('points', 0)
         );
 
       allow delete: if false;
+
+      // Histórico de pontos: só o dono, só acrescenta.
+      match /pointsLog/{logId} {
+        allow read: if signedIn() && uid() == userId;
+        allow create: if signedIn()
+          && uid() == userId
+          && request.resource.data.points is int
+          && request.resource.data.points >= 0
+          && request.resource.data.action in ['open', 'share', 'referral', 'quiz', 'rsvp'];
+        allow update, delete: if false;
+      }
+
+      // Resultado do quiz: um por dia, só o dono.
+      match /quizResults/{dayKey} {
+        allow read: if signedIn() && uid() == userId;
+        allow create: if signedIn() && uid() == userId;
+        allow update, delete: if false;
+      }
+    }
+
+    // referralCodes/{code}: código de indicação do usuário. Consulta
+    // individual por qualquer logado (inclusive quem está se cadastrando).
+    match /referralCodes/{code} {
+      allow get: if signedIn();
+      allow list: if false;
+      allow create: if signedIn() && request.resource.data.uid == uid();
+      allow update, delete: if false;
+    }
+
+    // referrals/{newUid}: criado por quem entrou com código. Quem indicou
+    // lê e marca como creditado ou rejeitado.
+    match /referrals/{newUid} {
+      allow create: if signedIn()
+        && uid() == newUid
+        && request.resource.data.referrerUid is string
+        && request.resource.data.referrerUid != uid()
+        && request.resource.data.status == 'pending';
+      allow read: if signedIn()
+        && (uid() == newUid || resource.data.referrerUid == uid());
+      allow update: if signedIn()
+        && resource.data.referrerUid == uid()
+        && resource.data.status == 'pending'
+        && changedKeys().hasOnly(['status', 'resolvedAt'])
+        && request.resource.data.status in ['credited', 'rejected_same_device'];
+      allow delete: if false;
+    }
+
+    // Conteúdo público para usuário logado. Escrita só pelo seed (admin).
+    match /verses/{verseId} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+
+    match /quizzes/{quizId} {
+      allow read: if signedIn();
+      allow write: if false;
     }
 
     // inviteCodes/{code}: qualquer usuário logado pode consultar um código
@@ -90,7 +155,7 @@ service cloud.firestore {
         && request.resource.data.plan == 'trial';
 
       allow update: if isChurchStaff(churchId)
-        && !request.resource.data.diff(resource.data).affectedKeys()
+        && !changedKeys()
              .hasAny(['createdBy', 'inviteCode', 'plan', 'planStatus', 'trialEndsAt', 'memberLimit']);
 
       allow delete: if false;
@@ -114,10 +179,19 @@ service cloud.firestore {
             )
           );
 
-        // Só a equipe muda papel, e ninguém promove a si mesmo.
-        allow update: if isChurchStaff(churchId)
-          && memberId != uid()
-          && request.resource.data.role in ['member', 'leader', 'pastor', 'churchAdmin'];
+        // O próprio membro só mexe no opt-in do ranking e no espelho de
+        // pontos. A equipe muda papel dos outros; ninguém se promove.
+        allow update: if signedIn()
+          && (
+            (
+              uid() == memberId
+              && changedKeys().hasOnly(['statusOptIn', 'points', 'status', 'name', 'photoUrl'])
+            ) || (
+              isChurchStaff(churchId)
+              && memberId != uid()
+              && request.resource.data.role in ['member', 'leader', 'pastor', 'churchAdmin']
+            )
+          );
 
         allow delete: if isChurchStaff(churchId) && memberId != uid();
       }

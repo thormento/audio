@@ -2,12 +2,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/models/app_user.dart';
-import '../church/pages/choose_church_page.dart';
-import '../church/pages/church_home_page.dart';
+import '../../app/home_shell.dart';
 import 'auth_repository.dart';
 import 'pages/sign_in_page.dart';
 
-/// Decide a tela raiz: entrar, escolher igreja ou início da igreja.
+/// Decide a tela raiz: entrar ou as abas do app.
 class AuthGate extends StatelessWidget {
   const AuthGate({super.key});
 
@@ -34,10 +33,7 @@ class AuthGate extends StatelessWidget {
               // Documento ainda sendo criado na primeira entrada.
               return const _Loading();
             }
-            if (!appUser.hasChurch) {
-              return ChooseChurchPage(user: appUser);
-            }
-            return ChurchHomePage(user: appUser);
+            return HomeShell(user: appUser);
           },
         );
       },

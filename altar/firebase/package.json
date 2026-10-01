@@ -4,11 +4,15 @@
   "type": "module",
   "scripts": {
     "emulators": "firebase emulators:start --project demo-altar",
-    "test": "firebase emulators:exec --only firestore --project demo-altar \"node --test test/rules.test.mjs\""
+    "test": "firebase emulators:exec --only firestore --project demo-altar \"node --test --test-concurrency=1 test/rules.test.mjs test/reader.test.mjs\"",
+    "seed": "FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 node seed.mjs"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "^4.0.1",
     "firebase": "^11.0.0",
     "firebase-tools": "^14.0.0"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.10.0"
   }
 }

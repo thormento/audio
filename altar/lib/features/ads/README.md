@@ -1,3 +1,3 @@
 # ads
 
-Feature `ads`. Vazia na Fase 0. Ver `docs/FASES.md` para a fase que a implementa.
+AdMob: política de rotas, serviço e banner. Só no feed de versículos.

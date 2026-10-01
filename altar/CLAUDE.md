@@ -91,7 +91,8 @@ Chat em tempo real, vídeo próprio, EBD completa, check-in infantil, multi-camp
 
 ## Regra de fases (a mais importante)
 
-- Uma fase, um objetivo, um commit. A lista está em `docs/FASES.md`.
+- Uma fase, um objetivo, um commit. A lista e a ordem decidida estão em `docs/FASES.md`: base (0, 1), leitor (5, 6, 7, 8), igreja (2, 3, 4, 9), fechamento (10).
+- Telas da igreja que entrarem depois devem usar os nomes de rota de `lib/app/routes.dart`, porque a política de anúncios os proíbe por nome.
 - Nunca avance para a próxima fase sem pedido explícito do usuário.
 - Se o pedido for "continue a fase atual", não inicie feature da fase seguinte.
 - Uma fase só fecha quando: o fluxo principal abre no emulador; a regra de acesso foi testada; não há anúncio em tela proibida; os textos estão em português; o agente entregou como testar e o que ficou de dívida.

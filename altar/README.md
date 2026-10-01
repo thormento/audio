@@ -9,7 +9,8 @@ Nome provisório. Trocar antes de publicar.
 - `CLAUDE.md`: regras permanentes do projeto. Leia antes de qualquer sessão.
 - `docs/ROTEIRO.md`: spec completa e prompts de cada fase.
 - `docs/PRD.md`: personas, fluxos, telas, modelo Firestore e critério de pronto.
-- `docs/FASES.md`: lista das fases e a fase atual.
+- `docs/FASES.md`: lista das fases, ordem decidida e fase atual.
+- `docs/FASE1.md` e `docs/LEITOR.md`: o que ficou pronto e como testar cada bloco.
 
 ## Como rodar
 
@@ -19,6 +20,7 @@ Requisitos: Flutter 3.x estável (testado com 3.47), Android Studio ou Xcode com
 
 ```bash
 cd firebase && npm install && npm run emulators   # terminal 1
+cd firebase && npm run seed                       # versículos e quiz no emulador
 flutter pub get
 flutter run --dart-define=USE_EMULATOR=true --dart-define=EMULATOR_HOST=10.0.2.2   # emulador Android
 flutter run --dart-define=USE_EMULATOR=true                                        # simulador iOS ou desktop
@@ -57,6 +59,8 @@ lib/
   features/
     auth/  church/  members/  feed/  events/  giving/
     verses/  gamification/  ads/  billing/  settings/
+assets/seed/           versículos e perguntas do quiz embutidos
+firebase/              regras, testes de regras e seed
 ```
 
 Cada feature é uma pasta própria. Todo documento de negócio carrega `churchId`. As regras do Firestore ficam em `firebase/firestore.rules`, com testes em `firebase/test/`.
@@ -77,4 +81,4 @@ Cada feature é uma pasta própria. Todo documento de negócio carrega `churchId
 | 9 | Plano da igreja | Loja |
 | 10 | LGPD e ficha das lojas | Feature nova |
 
-Uma fase por sessão. Para começar uma sessão, cole o prompt da fase em `docs/ROTEIRO.md` e termine com: "Siga o CLAUDE.md e o docs/ROTEIRO.md. Não avance para a próxima fase. Ao terminar, liste o que ficou pronto, o que falta e como testar."
+A ordem real de execução está em `docs/FASES.md` (leitor antes da igreja). Uma fase por sessão. Para começar uma sessão, cole o prompt da fase em `docs/ROTEIRO.md` e termine com: "Siga o CLAUDE.md e o docs/ROTEIRO.md. Não avance para a próxima fase. Ao terminar, liste o que ficou pronto, o que falta e como testar."

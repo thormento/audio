@@ -1,3 +1,3 @@
 # gamification
 
-Feature `gamification`. Vazia na Fase 0. Ver `docs/FASES.md` para a fase que a implementa.
+Pontos, status, indicação, perfil, ranking opt-in e quiz.

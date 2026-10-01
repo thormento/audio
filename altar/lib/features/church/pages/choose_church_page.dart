@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../app/routes.dart';
 import '../../../core/models/app_user.dart';
-import '../../auth/auth_repository.dart';
 import 'create_church_page.dart';
 import 'join_church_page.dart';
 
@@ -15,16 +15,7 @@ class ChooseChurchPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Altar'),
-        actions: [
-          IconButton(
-            tooltip: 'Sair',
-            onPressed: AuthRepository.instance.signOut,
-            icon: const Icon(Icons.logout),
-          ),
-        ],
-      ),
+      appBar: AppBar(title: const Text('Minha igreja')),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -40,14 +31,16 @@ class ChooseChurchPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Para começar, entre na sua igreja com o código do convite '
-                    'ou crie a igreja se você é o pastor.',
+                    'O versículo do dia, o quiz e os pontos já estão liberados. '
+                    'Para receber avisos e agenda da sua igreja, entre com o '
+                    'código do convite, ou crie a igreja se você é o pastor.',
                     style: textTheme.bodyLarge,
                   ),
                   const SizedBox(height: 32),
                   FilledButton.icon(
                     onPressed: () => Navigator.of(context).push(
                       MaterialPageRoute<void>(
+                        settings: const RouteSettings(name: AppRoutes.joinChurch),
                         builder: (_) => JoinChurchPage(user: user),
                       ),
                     ),
@@ -58,6 +51,7 @@ class ChooseChurchPage extends StatelessWidget {
                   OutlinedButton.icon(
                     onPressed: () => Navigator.of(context).push(
                       MaterialPageRoute<void>(
+                        settings: const RouteSettings(name: AppRoutes.createChurch),
                         builder: (_) => CreateChurchPage(user: user),
                       ),
                     ),

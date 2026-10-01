@@ -10,6 +10,9 @@ class AppUser {
     this.churchId,
     this.role,
     this.consentAccount = false,
+    this.consentAds = false,
+    this.points = 0,
+    this.referralCode,
     this.createdAt,
   });
 
@@ -20,6 +23,9 @@ class AppUser {
   final String? churchId;
   final String? role;
   final bool consentAccount;
+  final bool consentAds;
+  final int points;
+  final String? referralCode;
   final DateTime? createdAt;
 
   bool get hasChurch => churchId != null && churchId!.isNotEmpty;
@@ -34,6 +40,9 @@ class AppUser {
       churchId: data['churchId'] as String?,
       role: data['role'] as String?,
       consentAccount: (data['consentAccount'] as bool?) ?? false,
+      consentAds: (data['consentAds'] as bool?) ?? false,
+      points: (data['points'] as num?)?.toInt() ?? 0,
+      referralCode: data['referralCode'] as String?,
       createdAt: (data['createdAt'] as Timestamp?)?.toDate(),
     );
   }
