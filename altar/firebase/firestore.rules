@@ -2,7 +2,8 @@ rules_version = '2';
 
 // Regras do Altar.
 // Princípios: fiel só lê a própria igreja; não lê membros de outra;
-// o papel que vale é o de churches/{id}/members/{uid}; pontos só sobem.
+// o papel que vale é o de churches/{id}/members/{uid}; pontos só sobem;
+// fiel só vê o próprio dízimo; painel trava quando o plano não permite.
 service cloud.firestore {
   match /databases/{db}/documents {
 
@@ -34,8 +35,32 @@ service cloud.firestore {
       return isMember(churchId) && memberRole(churchId) in ['pastor', 'churchAdmin'];
     }
 
+    function isFinance(churchId) {
+      return isMember(churchId) && memberRole(churchId) in ['pastor', 'churchAdmin', 'treasurer'];
+    }
+
     function changedKeys() {
       return request.resource.data.diff(resource.data).affectedKeys();
+    }
+
+    // Mesma lógica de ChurchAccess.canWrite no app.
+    function churchWritable(churchId) {
+      let c = get(churchPath(churchId)).data;
+      return (
+        c.plan == 'trial'
+        && c.planStatus == 'active'
+        && c.trialEndsAt > request.time
+      ) || (
+        c.plan in ['essencial', 'comunhao', 'missao']
+        && (
+          c.planStatus == 'active'
+          || (c.planStatus == 'past_due' && c.get('graceUntil', request.time) > request.time)
+        )
+      );
+    }
+
+    function planAllowsOnline(churchId) {
+      return get(churchPath(churchId)).data.plan in ['trial', 'comunhao', 'missao'];
     }
 
     // users/{uid}: só o dono lê e escreve. Nunca aceita CPF.
@@ -52,8 +77,6 @@ service cloud.firestore {
         && !('role' in request.resource.data)
         && (!('points' in request.resource.data) || request.resource.data.points == 0);
 
-      // churchId e role só mudam junto com o doc de membro correspondente,
-      // na mesma transação ou batch (getAfter). Pontos nunca diminuem.
       allow update: if signedIn()
         && uid() == userId
         && !('cpf' in request.resource.data)
@@ -72,7 +95,6 @@ service cloud.firestore {
 
       allow delete: if false;
 
-      // Histórico de pontos: só o dono, só acrescenta.
       match /pointsLog/{logId} {
         allow read: if signedIn() && uid() == userId;
         allow create: if signedIn()
@@ -83,7 +105,6 @@ service cloud.firestore {
         allow update, delete: if false;
       }
 
-      // Resultado do quiz: um por dia, só o dono.
       match /quizResults/{dayKey} {
         allow read: if signedIn() && uid() == userId;
         allow create: if signedIn() && uid() == userId;
@@ -91,8 +112,12 @@ service cloud.firestore {
       }
     }
 
-    // referralCodes/{code}: código de indicação do usuário. Consulta
-    // individual por qualquer logado (inclusive quem está se cadastrando).
+    // Pedido de exclusão (LGPD). A Cloud Function conclui.
+    match /deletionRequests/{userId} {
+      allow read, create: if signedIn() && uid() == userId;
+      allow update, delete: if false;
+    }
+
     match /referralCodes/{code} {
       allow get: if signedIn();
       allow list: if false;
@@ -100,8 +125,6 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
-    // referrals/{newUid}: criado por quem entrou com código. Quem indicou
-    // lê e marca como creditado ou rejeitado.
     match /referrals/{newUid} {
       allow create: if signedIn()
         && uid() == newUid
@@ -118,7 +141,6 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // Conteúdo público para usuário logado. Escrita só pelo seed (admin).
     match /verses/{verseId} {
       allow read: if signedIn();
       allow write: if false;
@@ -129,17 +151,19 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // inviteCodes/{code}: qualquer usuário logado pode consultar um código
-    // específico, mas nunca listar. Só nasce junto com a igreja.
+    // billing/{churchId}: só o administrador lê; a Cloud Function escreve.
+    match /billing/{churchId} {
+      allow read: if isMember(churchId) && memberRole(churchId) == 'churchAdmin';
+      allow write: if false;
+    }
+
     match /inviteCodes/{code} {
       allow get: if signedIn();
       allow list: if false;
-
       allow create: if signedIn()
         && request.resource.data.churchId is string
         && getAfter(churchPath(request.resource.data.churchId)).data.createdBy == uid()
         && getAfter(churchPath(request.resource.data.churchId)).data.inviteCode == code;
-
       allow update, delete: if false;
     }
 
@@ -152,20 +176,32 @@ service cloud.firestore {
         && request.resource.data.name.size() > 0
         && request.resource.data.inviteCode is string
         && request.resource.data.inviteCode.size() == 6
-        && request.resource.data.plan == 'trial';
+        && request.resource.data.plan == 'trial'
+        && request.resource.data.memberCount == 1;
 
-      allow update: if isChurchStaff(churchId)
-        && !changedKeys()
-             .hasAny(['createdBy', 'inviteCode', 'plan', 'planStatus', 'trialEndsAt', 'memberLimit']);
+      // Equipe edita dados da igreja (nome, cidade, logo, chave Pix), nunca
+      // plano, código ou contador. Quem entra pelo código soma 1 no contador
+      // na mesma transação em que vira membro.
+      allow update: if (
+          isChurchStaff(churchId)
+          && !changedKeys().hasAny([
+            'createdBy', 'inviteCode', 'plan', 'planStatus', 'trialEndsAt',
+            'memberLimit', 'memberCount', 'graceUntil', 'currentPeriodEnd', 'usage'
+          ])
+        ) || (
+          signedIn()
+          && changedKeys().hasOnly(['memberCount'])
+          && request.resource.data.memberCount == resource.data.get('memberCount', 0) + 1
+          && getAfter(memberPath(churchId, uid())).data.role == 'member'
+        );
 
       allow delete: if false;
 
-      // members/{uid}
       match /members/{memberId} {
         allow read: if isMember(churchId);
 
-        // Criador da igreja vira churchAdmin na mesma transação da igreja.
-        // Fiel entra como member apenas com o código correto da igreja.
+        // Criador vira churchAdmin na mesma transação da igreja. Fiel entra
+        // como member com o código certo e enquanto houver vaga no plano.
         allow create: if signedIn()
           && uid() == memberId
           && (
@@ -176,11 +212,10 @@ service cloud.firestore {
               request.resource.data.role == 'member'
               && request.resource.data.inviteCode is string
               && request.resource.data.inviteCode == get(churchPath(churchId)).data.inviteCode
+              && get(churchPath(churchId)).data.get('memberCount', 0) < get(churchPath(churchId)).data.memberLimit
             )
           );
 
-        // O próprio membro só mexe no opt-in do ranking e no espelho de
-        // pontos. A equipe muda papel dos outros; ninguém se promove.
         allow update: if signedIn()
           && (
             (
@@ -189,15 +224,128 @@ service cloud.firestore {
             ) || (
               isChurchStaff(churchId)
               && memberId != uid()
-              && request.resource.data.role in ['member', 'leader', 'pastor', 'churchAdmin']
+              && request.resource.data.role in ['member', 'leader', 'treasurer', 'pastor', 'churchAdmin']
             )
           );
 
         allow delete: if isChurchStaff(churchId) && memberId != uid();
       }
+
+      // posts: aviso para todos os membros; oração só autor e equipe.
+      match /posts/{postId} {
+        allow read: if isMember(churchId)
+          && (
+            resource.data.type == 'aviso'
+            || resource.data.authorId == uid()
+            || isChurchStaff(churchId)
+          );
+
+        allow create: if isMember(churchId)
+          && request.resource.data.authorId == uid()
+          && request.resource.data.churchId == churchId
+          && request.resource.data.body is string
+          && request.resource.data.body.size() > 0
+          && (
+            (
+              request.resource.data.type == 'aviso'
+              && isChurchStaff(churchId)
+              && churchWritable(churchId)
+              && request.resource.data.title is string
+              && request.resource.data.title.size() > 0
+            ) || (
+              request.resource.data.type == 'oracao'
+            )
+          );
+
+        // Equipe marca oração como orada ou edita aviso. Fiel não edita.
+        allow update: if isChurchStaff(churchId)
+          && !changedKeys().hasAny(['authorId', 'type', 'churchId', 'createdAt'])
+          && (
+            resource.data.type == 'aviso'
+            || changedKeys().hasOnly(['prayedAt', 'prayedBy'])
+          );
+
+        allow delete: if isChurchStaff(churchId)
+          || (resource.data.type == 'oracao' && resource.data.authorId == uid());
+      }
+
+      // events: equipe cria com plano ativo; online só nos planos que permitem.
+      match /events/{eventId} {
+        allow read: if isMember(churchId);
+
+        allow create: if isChurchStaff(churchId)
+          && churchWritable(churchId)
+          && request.resource.data.title is string
+          && request.resource.data.title.size() > 0
+          && request.resource.data.startsAt is timestamp
+          && request.resource.data.type in ['culto', 'encontro', 'online']
+          && (
+            request.resource.data.type != 'online'
+            || (
+              request.resource.data.onlineUrl is string
+              && request.resource.data.onlineUrl.size() > 0
+              && planAllowsOnline(churchId)
+            )
+          );
+
+        allow update, delete: if isChurchStaff(churchId) && churchWritable(churchId);
+
+        match /rsvp/{userId} {
+          allow read: if isMember(churchId);
+          allow create, update: if isMember(churchId)
+            && uid() == userId
+            && request.resource.data.going is bool;
+          allow delete: if isMember(churchId) && uid() == userId;
+        }
+      }
+
+      // gifts: fiel só vê o próprio. Tesouraria vê o período com plano ativo.
+      match /gifts/{giftId} {
+        allow read: if isMember(churchId)
+          && (
+            resource.data.uid == uid()
+            || (isFinance(churchId) && churchWritable(churchId))
+          );
+
+        // Lançamento direto (BR Code da igreja) criado pelo fiel. O do
+        // Mercado Pago nasce na Cloud Function.
+        allow create: if isMember(churchId)
+          && request.resource.data.uid == uid()
+          && request.resource.data.churchId == churchId
+          && request.resource.data.amountCents is int
+          && request.resource.data.amountCents >= 100
+          && request.resource.data.method == 'pix_direto'
+          && request.resource.data.status == 'pendente'
+          && request.resource.data.kind in ['dizimo', 'oferta']
+          && get(churchPath(churchId)).data.get('pixKey', '') != '';
+
+        // Fiel só informa que pagou. Tesouraria confirma ou expira.
+        allow update: if isMember(churchId)
+          && (
+            (
+              resource.data.uid == uid()
+              && resource.data.status == 'pendente'
+              && changedKeys().hasOnly(['status', 'informedAt'])
+              && request.resource.data.status == 'informado'
+            ) || (
+              isFinance(churchId)
+              && churchWritable(churchId)
+              && changedKeys().hasOnly(['status', 'reviewedBy', 'reviewedAt'])
+              && request.resource.data.status in ['pago', 'expirado']
+            )
+          );
+
+        allow delete: if false;
+      }
+
+      // Trilha de quem acessou o relatório de dízimos.
+      match /giftsAudit/{auditId} {
+        allow read: if isChurchStaff(churchId);
+        allow create: if isFinance(churchId) && request.resource.data.uid == uid();
+        allow update, delete: if false;
+      }
     }
 
-    // Tudo que não foi listado fica fechado.
     match /{document=**} {
       allow read, write: if false;
     }

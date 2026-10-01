@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import '../../../core/models/app_user.dart';
 import '../../ads/ads_service.dart';
 import '../../auth/auth_repository.dart';
+import 'privacy_page.dart';
 
 /// Ajustes e consentimentos. Anúncio, notificação e ranking são escolhas
 /// separadas, como manda a LGPD para dado sensível.
@@ -114,11 +115,15 @@ class SettingsPage extends StatelessWidget {
                 title: Text(user.name),
                 subtitle: Text(user.email ?? ''),
               ),
-              const ListTile(
-                leading: Icon(Icons.policy_outlined),
-                title: Text('Exportar ou apagar meus dados'),
-                subtitle: Text(
-                  'Entra na fase de privacidade. Até lá, peça pelo suporte do app.',
+              ListTile(
+                leading: const Icon(Icons.policy_outlined),
+                title: const Text('Privacidade e meus dados'),
+                subtitle: const Text('Exportar, apagar conta, política e termos'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => PrivacyPage(user: user),
+                  ),
                 ),
               ),
               ListTile(

@@ -10,10 +10,10 @@ O app do leitor sai primeiro; o lado da igreja vem depois, sem desfazer nada.
 | --- | --- | --- |
 | Base | 0, 1 | concluídas (`docs/FASE1.md`) |
 | Leitor | 5, 6, 7, 8 | concluídas (`docs/LEITOR.md`) |
-| Igreja | 2, 3, 4, 9 | próximas, nesta ordem |
-| Fechamento | 10 | por último |
+| Igreja | 2, 3, 4, 9 | concluídas (`docs/IGREJA.md`) |
+| Fechamento | 10 | concluída (`docs/IGREJA.md`, `docs/LOJA.md`, `docs/PRODUCAO.md`) |
 
-Fase atual: **bloco do leitor concluído**. Próxima: **2** (comunicados e oração).
+Fase atual: **v1 concluída em sandbox**. Próximo passo: `docs/PRODUCAO.md`.
 
 ## Fase 0 — Spec e esqueleto
 

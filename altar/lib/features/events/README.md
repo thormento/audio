@@ -1,3 +1,3 @@
 # events
 
-Feature `events`. Vazia na Fase 0. Ver `docs/FASES.md` para a fase que a implementa.
+Agenda, RSVP e lembrete local.

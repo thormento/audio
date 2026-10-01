@@ -1,3 +1,3 @@
 # members
 
-Feature `members`. Vazia na Fase 0. Ver `docs/FASES.md` para a fase que a implementa.
+Lista de membros e papéis.

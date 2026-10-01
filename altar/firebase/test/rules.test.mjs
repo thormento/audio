@@ -17,6 +17,7 @@ import {
   setDoc,
   updateDoc,
   writeBatch,
+  increment,
 } from 'firebase/firestore';
 
 const PROJECT = 'demo-altar';
@@ -70,6 +71,7 @@ async function createChurch(uid, churchId, code, name = 'Igreja Teste') {
     plan: 'trial',
     planStatus: 'active',
     memberLimit: 30,
+    memberCount: 1,
     inviteCode: code,
     createdBy: uid,
   });
@@ -94,6 +96,7 @@ async function joinChurch(uid, churchId, code, role = 'member') {
     inviteCode: code,
   });
   batch.update(doc(d, 'users', uid), { churchId, role });
+  batch.update(doc(d, 'churches', churchId), { memberCount: increment(1) });
   return batch.commit();
 }
 

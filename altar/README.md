@@ -10,7 +10,8 @@ Nome provisório. Trocar antes de publicar.
 - `docs/ROTEIRO.md`: spec completa e prompts de cada fase.
 - `docs/PRD.md`: personas, fluxos, telas, modelo Firestore e critério de pronto.
 - `docs/FASES.md`: lista das fases, ordem decidida e fase atual.
-- `docs/FASE1.md` e `docs/LEITOR.md`: o que ficou pronto e como testar cada bloco.
+- `docs/FASE1.md`, `docs/LEITOR.md` e `docs/IGREJA.md`: o que ficou pronto e como testar cada bloco.
+- `docs/LOJA.md`, `docs/PRODUCAO.md` e `docs/legal/`: ficha das lojas, checklist de produção, política e termos.
 
 ## Como rodar
 
@@ -19,7 +20,7 @@ Requisitos: Flutter 3.x estável (testado com 3.47), Android Studio ou Xcode com
 ### Com os emuladores do Firebase (recomendado para desenvolver)
 
 ```bash
-cd firebase && npm install && npm run emulators   # terminal 1
+cd firebase && npm install && (cd functions && npm install) && npm run emulators   # terminal 1
 cd firebase && npm run seed                       # versículos e quiz no emulador
 flutter pub get
 flutter run --dart-define=USE_EMULATOR=true --dart-define=EMULATOR_HOST=10.0.2.2   # emulador Android
@@ -35,7 +36,7 @@ dart pub global activate flutterfire_cli
 flutterfire configure --project=SEU_PROJETO --out=lib/core/firebase/firebase_options.dart
 ```
 
-Depois publique as regras: `cd firebase && npx firebase deploy --only firestore:rules`. Para "Entrar com Google" funcionar fora do emulador, adicione o `google-services.json` (Android) e o `GoogleService-Info.plist` (iOS) gerados pelo console e cadastre o SHA-1 do app no Firebase.
+Depois publique regras, índices e funções: `cd firebase && npx firebase deploy --only firestore,functions`. O checklist completo está em `docs/PRODUCAO.md`. Para "Entrar com Google" funcionar fora do emulador, adicione o `google-services.json` (Android) e o `GoogleService-Info.plist` (iOS) gerados pelo console e cadastre o SHA-1 do app no Firebase.
 
 ### Testes
 
@@ -43,6 +44,7 @@ Depois publique as regras: `cd firebase && npx firebase deploy --only firestore:
 flutter analyze
 flutter test                 # testes de widget e unidade
 cd firebase && npm test      # regras do Firestore no emulador
+cd firebase/functions && npm run lint
 ```
 
 ## Estrutura
@@ -60,7 +62,8 @@ lib/
     auth/  church/  members/  feed/  events/  giving/
     verses/  gamification/  ads/  billing/  settings/
 assets/seed/           versículos e perguntas do quiz embutidos
-firebase/              regras, testes de regras e seed
+assets/icon/           ícone e splash (gerados por tool/make_icon.dart)
+firebase/              regras, índices, testes de regras, seed e functions/
 ```
 
 Cada feature é uma pasta própria. Todo documento de negócio carrega `churchId`. As regras do Firestore ficam em `firebase/firestore.rules`, com testes em `firebase/test/`.

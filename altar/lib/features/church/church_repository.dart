@@ -104,6 +104,7 @@ class ChurchRepository {
             'planStatus': 'active',
             'trialEndsAt': Timestamp.fromDate(trialEndsAt),
             'memberLimit': 30,
+            'memberCount': 1,
             'inviteCode': code,
             'createdBy': uid,
             'createdAt': FieldValue.serverTimestamp(),
@@ -175,6 +176,9 @@ class ChurchRepository {
       'churchId': churchId,
       'role': Roles.member,
     });
+    batch.update(_churches.doc(churchId), {
+      'memberCount': FieldValue.increment(1),
+    });
 
     try {
       await batch.commit();
@@ -183,7 +187,7 @@ class ChurchRepository {
         // As regras bloqueiam quando a igreja não existe mais ou o código
         // não bate com o da igreja.
         throw const ChurchFailure(
-          'Igreja não encontrada ou código desatualizado.',
+          'Igreja não encontrada, código desatualizado ou limite de membros do plano atingido.',
         );
       }
       throw ChurchFailure(_message(e, 'Não foi possível entrar na igreja'));

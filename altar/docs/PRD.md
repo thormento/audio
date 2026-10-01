@@ -141,6 +141,8 @@ billing/{churchId}
   mpSubscriptionId, status, currentPeriodEnd
 ```
 
+Coleções acrescentadas na implementação: `inviteCodes/{code}`, `referralCodes/{code}`, `referrals/{uid}`, `deletionRequests/{uid}`, `churches/{id}/giftsAudit/{id}` e `users/{uid}/quizResults/{dia}`. O doc de membro espelha `points`, `status` e `name` para o ranking opt-in. Papel extra: `treasurer`.
+
 Regras de acesso:
 
 - Fiel só lê a própria igreja e o próprio dízimo.

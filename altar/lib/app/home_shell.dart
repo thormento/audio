@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../core/messaging/messaging_service.dart';
 import '../core/models/app_user.dart';
 import '../features/ads/ads_service.dart';
 import '../features/church/pages/choose_church_page.dart';
@@ -34,10 +35,15 @@ class _HomeShellState extends State<HomeShell> {
     if (old.user.consentAds != widget.user.consentAds) {
       AdsService.instance.setConsent(widget.user.consentAds);
     }
+    if (old.user.consentPush != widget.user.consentPush ||
+        old.user.churchId != widget.user.churchId) {
+      MessagingService.instance.sync(widget.user);
+    }
   }
 
   Future<void> _onOpen() async {
     AdsService.instance.setConsent(widget.user.consentAds);
+    MessagingService.instance.sync(widget.user);
     try {
       final awarded = await PointsService.instance.recordAppOpen(widget.user.uid);
       final credited =
