@@ -542,14 +542,28 @@ document.addEventListener('DOMContentLoaded', function () {
 	$('#btngettoken').click(function(){
 		 getToken();
 	})
+	// Rolar o feed da ABA ATUAL. O scroll e injetado direto na aba (nao depende do
+	// content.js, que so roda em /pages/creation) e continua depois do popup fechar.
 	$('#btnrolarfeed').click(function(){
-		getCurrentTab().then(tab2=>{
-			chrome.tabs.sendMessage(tab2.id, { action: 'rolarFeed' }, function (resp) {
-				if (chrome.runtime.lastError) {
-					console.log('Erro ao rolar feed:', chrome.runtime.lastError.message);
-				} else {
-					setTimeout(function () { window.close(); }, 500);
+		var $s = $('#statuscriar');
+		getCurrentTab().then(function(tab2){
+			if(!tab2 || (tab2.url||'').indexOf('facebook.com') === -1){
+				$s.text('Abra uma aba do Facebook para rolar o feed.');
+				return;
+			}
+			chrome.scripting.executeScript({
+				target: { tabId: tab2.id },
+				func: function(){
+					var fim = Date.now() + 5000 + Math.random() * 10000;
+					var timer = setInterval(function(){
+						if (Date.now() > fim) { clearInterval(timer); return; }
+						window.scrollBy(0, 40 + Math.random() * 40);
+					}, 400);
 				}
+			}, function(){
+				if(chrome.runtime.lastError){ $s.text('Erro: ' + chrome.runtime.lastError.message); return; }
+				$s.text('Rolando o feed...');
+				setTimeout(function(){ window.close(); }, 600);
 			});
 		});
 	})
