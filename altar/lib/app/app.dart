@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
+import '../features/auth/auth_gate.dart';
 import 'theme/app_theme.dart';
 
-/// Raiz do app. Na Fase 0 mostra apenas o nome do app.
+/// Raiz do app.
 class AltarApp extends StatelessWidget {
-  const AltarApp({super.key});
+  const AltarApp({super.key, this.home});
+
+  /// Tela raiz alternativa, usada em testes de widget sem Firebase.
+  final Widget? home;
 
   @override
   Widget build(BuildContext context) {
@@ -18,12 +22,12 @@ class AltarApp extends StatelessWidget {
       locale: const Locale('pt', 'BR'),
       supportedLocales: const [Locale('pt', 'BR')],
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
-      home: const SplashPage(),
+      home: home ?? const AuthGate(),
     );
   }
 }
 
-/// Tela inicial da Fase 0: só o nome do app.
+/// Tela de abertura com o nome do app.
 class SplashPage extends StatelessWidget {
   const SplashPage({super.key});
 

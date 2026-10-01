@@ -1,3 +1,3 @@
 # auth
 
-Feature `auth`. Vazia na Fase 0. Ver `docs/FASES.md` para a fase que a implementa.
+Feature `auth` (Fase 1): `AuthRepository`, `AuthGate`, telas de entrar e criar conta.

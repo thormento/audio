@@ -2,7 +2,7 @@
 
 Uma fase por sessão. Uma fase, um objetivo, um commit. Nunca avance sem pedido explícito. Os prompts completos de cada fase estão em `docs/ROTEIRO.md`.
 
-Fase atual: **0 concluída**. Próxima: **1**.
+Fase atual: **1 concluída**. Próxima: **2**. Como testar a fase 1: `docs/FASE1.md`.
 
 ## Fase 0 — Spec e esqueleto
 

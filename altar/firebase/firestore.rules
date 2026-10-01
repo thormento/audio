@@ -1,0 +1,131 @@
+rules_version = '2';
+
+// Regras do Altar, Fase 1.
+// Princípios: fiel só lê a própria igreja; não lê membros de outra;
+// o papel que vale é o de churches/{id}/members/{uid}.
+service cloud.firestore {
+  match /databases/{db}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function uid() {
+      return request.auth.uid;
+    }
+
+    function churchPath(churchId) {
+      return /databases/$(db)/documents/churches/$(churchId);
+    }
+
+    function memberPath(churchId, userId) {
+      return /databases/$(db)/documents/churches/$(churchId)/members/$(userId);
+    }
+
+    function isMember(churchId) {
+      return signedIn() && exists(memberPath(churchId, uid()));
+    }
+
+    function memberRole(churchId) {
+      return get(memberPath(churchId, uid())).data.role;
+    }
+
+    function isChurchStaff(churchId) {
+      return isMember(churchId) && memberRole(churchId) in ['pastor', 'churchAdmin'];
+    }
+
+    // users/{uid}: só o dono lê e escreve. Nunca aceita CPF.
+    match /users/{userId} {
+      allow read: if signedIn() && uid() == userId;
+
+      allow create: if signedIn()
+        && uid() == userId
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.consentAccount == true
+        && !('cpf' in request.resource.data)
+        && !('churchId' in request.resource.data)
+        && !('role' in request.resource.data);
+
+      // churchId e role só mudam junto com o doc de membro correspondente,
+      // na mesma transação ou batch (getAfter).
+      allow update: if signedIn()
+        && uid() == userId
+        && !('cpf' in request.resource.data)
+        && (
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['churchId', 'role'])
+          || (
+            request.resource.data.churchId is string
+            && getAfter(memberPath(request.resource.data.churchId, userId)).data.role
+               == request.resource.data.role
+          )
+        );
+
+      allow delete: if false;
+    }
+
+    // inviteCodes/{code}: qualquer usuário logado pode consultar um código
+    // específico, mas nunca listar. Só nasce junto com a igreja.
+    match /inviteCodes/{code} {
+      allow get: if signedIn();
+      allow list: if false;
+
+      allow create: if signedIn()
+        && request.resource.data.churchId is string
+        && getAfter(churchPath(request.resource.data.churchId)).data.createdBy == uid()
+        && getAfter(churchPath(request.resource.data.churchId)).data.inviteCode == code;
+
+      allow update, delete: if false;
+    }
+
+    match /churches/{churchId} {
+      allow read: if isMember(churchId);
+
+      allow create: if signedIn()
+        && request.resource.data.createdBy == uid()
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.inviteCode is string
+        && request.resource.data.inviteCode.size() == 6
+        && request.resource.data.plan == 'trial';
+
+      allow update: if isChurchStaff(churchId)
+        && !request.resource.data.diff(resource.data).affectedKeys()
+             .hasAny(['createdBy', 'inviteCode', 'plan', 'planStatus', 'trialEndsAt', 'memberLimit']);
+
+      allow delete: if false;
+
+      // members/{uid}
+      match /members/{memberId} {
+        allow read: if isMember(churchId);
+
+        // Criador da igreja vira churchAdmin na mesma transação da igreja.
+        // Fiel entra como member apenas com o código correto da igreja.
+        allow create: if signedIn()
+          && uid() == memberId
+          && (
+            (
+              request.resource.data.role == 'churchAdmin'
+              && getAfter(churchPath(churchId)).data.createdBy == uid()
+            ) || (
+              request.resource.data.role == 'member'
+              && request.resource.data.inviteCode is string
+              && request.resource.data.inviteCode == get(churchPath(churchId)).data.inviteCode
+            )
+          );
+
+        // Só a equipe muda papel, e ninguém promove a si mesmo.
+        allow update: if isChurchStaff(churchId)
+          && memberId != uid()
+          && request.resource.data.role in ['member', 'leader', 'pastor', 'churchAdmin'];
+
+        allow delete: if isChurchStaff(churchId) && memberId != uid();
+      }
+    }
+
+    // Tudo que não foi listado fica fechado.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
