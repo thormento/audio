@@ -1,0 +1,3 @@
+tags:
+  prints:
+    skip: "Prints: rode flutter test --update-goldens test/screenshots/"
