@@ -1,0 +1,12 @@
+[
+  { "id": 1, "url": "https://meusite.com/artigo-01", "ativo": true },
+  { "id": 2, "url": "https://meusite.com/artigo-02", "ativo": true },
+  { "id": 3, "url": "https://meusite.com/artigo-03", "ativo": true },
+  { "id": 4, "url": "https://meusite.com/artigo-04", "ativo": true },
+  { "id": 5, "url": "https://meusite.com/artigo-05", "ativo": true },
+  { "id": 6, "url": "https://meusite.com/artigo-06", "ativo": true },
+  { "id": 7, "url": "https://meusite.com/artigo-07", "ativo": true },
+  { "id": 8, "url": "https://meusite.com/artigo-08", "ativo": true },
+  { "id": 9, "url": "https://meusite.com/artigo-09", "ativo": true },
+  { "id": 10, "url": "https://meusite.com/artigo-10", "ativo": false }
+]

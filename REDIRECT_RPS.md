@@ -115,3 +115,70 @@ Visitante -> chatvito.com -> 302 -> artigo com maior RPS
 - [ ] Onde o redirecionador roda e como o bot altera o destino.
 - [ ] Onde o bot roda (cron, GitHub Actions, n8n, etc.).
 - [ ] Onde ficam os logs das trocas.
+
+## Exemplo pronto (pasta `redirect-rps/`)
+
+| Arquivo        | O que faz                                                                 |
+|----------------|---------------------------------------------------------------------------|
+| `urls.json`    | Lista das URLs candidatas (`ativo: true` entra na disputa).               |
+| `redirect.js`  | Redirecionador do site de entrada. `GET /` faz 302, `POST /redirect` troca o destino. |
+| `bot.js`       | Consulta sua API de RPS a cada 30 min e troca o destino para a maior.     |
+| `mock-api.js`  | API falsa de RPS para testar local. Troque pela sua API real.             |
+
+### Contrato esperado da sua API de RPS
+
+O bot envia:
+
+```
+POST {RPS_API_URL}
+Authorization: Bearer {RPS_API_KEY}
+{ "urls": ["https://meusite.com/artigo-01", "https://meusite.com/artigo-02"] }
+```
+
+E espera receber:
+
+```json
+[
+  { "url": "https://meusite.com/artigo-01", "rps": 100 },
+  { "url": "https://meusite.com/artigo-02", "rps": 130 }
+]
+```
+
+Se sua API usa outro formato, ajuste só a função `consultarRps` em `bot.js`.
+
+### Rodando local
+
+```bash
+# terminal 1: API falsa de RPS
+node redirect-rps/mock-api.js
+
+# terminal 2: redirecionador (porta 4000)
+REDIRECT_TOKEN=meu-token node redirect-rps/redirect.js
+
+# terminal 3: bot
+RPS_API_URL=http://localhost:5000 REDIRECT_URL=http://localhost:4000 REDIRECT_TOKEN=meu-token node redirect-rps/bot.js
+```
+
+Saída do bot:
+
+```
+[2026-10-16T15:14:15Z] RPS:
+    187.47  https://meusite.com/artigo-08
+    160.98  https://meusite.com/artigo-03
+    127.00  https://meusite.com/artigo-05
+[2026-10-16T15:14:15Z] TROCA: https://meusite.com/artigo-09 -> https://meusite.com/artigo-08 (RPS 187.47)
+```
+
+Conferindo o redirecionador:
+
+```bash
+curl -I http://localhost:4000/
+# HTTP/1.1 302 Found
+# Location: https://meusite.com/artigo-08
+```
+
+### Em produção
+
+- `redirect.js` roda no domínio de entrada (ex.: chatvito.com).
+- `bot.js` roda em qualquer servidor com as variáveis `RPS_API_URL`, `RPS_API_KEY`, `REDIRECT_URL` e `REDIRECT_TOKEN`.
+- Como alternativa ao `setInterval`, rode o bot uma vez por execução via cron a cada 30 min.
