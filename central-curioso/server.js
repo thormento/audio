@@ -28,7 +28,8 @@ function slug(s) {
 function idUnico(lista, base) { let id = slug(base), n = 2; while (lista.some(x => x.id === id)) id = `${slug(base)}-${n++}`; return id; }
 function clienteVazio(d, c) {
   const projetos = {};
-  for (const p of d.projetos) projetos[p.id] = { ativo: false, obs: "", link: "", copys: [], ...(c.projetos?.[p.id] || {}) };
+  for (const p of d.projetos) projetos[p.id] = { ativo: false, status: "nao_verificado", ultimaVerificacao: "", obs: "", link: "", ofertas: [], copys: [], ...(c.projetos?.[p.id] || {}) };
+  for (const pc of Object.values(projetos)) pc.ativo = pc.status === "rodando";
   return { id: c.id, nome: c.nome || "", site: c.site || "", redeId: c.redeId || "", notas: c.notas || "", projetos };
 }
 

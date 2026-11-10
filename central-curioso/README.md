@@ -18,7 +18,7 @@ Sem dependências (Node 18+). Os dados ficam em `data/central.json`.
 - **Cliente** (`#/cliente/4adsa`): ficha com site, rede, notas e, por projeto, se está rodando, link do anúncio encontrado e observações. No Chatbot você cadastra as copys por página.
 - **Busca** no topo: encontra rede ou cliente pelo nome/site.
 
-Cada tela de projeto mostra a dica de "como achar" (biblioteca de anúncios do Facebook, transparência do Google, copys do chatbot).
+Cada cliente tem, por projeto, um status (Rodando, Parou, Não verificado), data da última verificação, link do anúncio, observações e a lista de **ofertas encontradas**. O painel mostra onde cada concorrente está investindo e as ofertas mais recentes.
 
 ## API
 

@@ -1,0 +1,317 @@
+{
+  "projetos": [
+    {
+      "id": "facebook",
+      "nome": "Facebook",
+      "cor": "#1877f2",
+      "comoAchar": "Biblioteca de Anúncios do Facebook: busque o site ou a página do cliente e veja se há anúncios ativos.",
+      "icone": "f"
+    },
+    {
+      "id": "google",
+      "nome": "Google",
+      "cor": "#34a853",
+      "comoAchar": "Central de Transparência de Anúncios do Google: busque o site. Pesquise também frases e informações do site para encontrar outros sites com a mesma oferta.",
+      "icone": "G"
+    },
+    {
+      "id": "chatbot",
+      "nome": "Chatbot",
+      "cor": "#ff7a00",
+      "comoAchar": "Chatbot espião: cadastre as copys usadas em cada página para analisar as ofertas por página.",
+      "icone": "💬"
+    }
+  ],
+  "redes": [
+    {
+      "id": "active",
+      "nome": "Active"
+    },
+    {
+      "id": "join",
+      "nome": "Join"
+    },
+    {
+      "id": "sites",
+      "nome": "Sites"
+    },
+    {
+      "id": "jose",
+      "nome": "Jose"
+    },
+    {
+      "id": "maria",
+      "nome": "Maria"
+    },
+    {
+      "id": "joao",
+      "nome": "Joao"
+    }
+  ],
+  "clientes": [
+    {
+      "id": "4adsa",
+      "nome": "4adsa",
+      "site": "https://4adsa.com",
+      "redeId": "active",
+      "notas": "",
+      "projetos": {
+        "facebook": {
+          "ativo": true,
+          "obs": "",
+          "link": "",
+          "status": "rodando",
+          "ultimaVerificacao": "2026-11-08",
+          "ofertas": [
+            {
+              "titulo": "Curso de tráfego pago com desconto",
+              "descricao": "Anúncio em vídeo, oferta de 50% por tempo limitado, CTA para página de vendas.",
+              "link": "",
+              "data": "2026-11-08"
+            }
+          ],
+          "copys": []
+        },
+        "google": {
+          "ativo": false,
+          "obs": "",
+          "link": "",
+          "status": "nao_verificado",
+          "ultimaVerificacao": "",
+          "ofertas": [],
+          "copys": []
+        },
+        "chatbot": {
+          "ativo": false,
+          "obs": "",
+          "copys": [],
+          "status": "nao_verificado",
+          "ultimaVerificacao": "",
+          "ofertas": []
+        }
+      }
+    },
+    {
+      "id": "adzep",
+      "nome": "Adzep",
+      "site": "https://adzep.com",
+      "redeId": "active",
+      "notas": "",
+      "projetos": {
+        "facebook": {
+          "ativo": false,
+          "obs": "",
+          "link": "",
+          "status": "parado",
+          "ultimaVerificacao": "2026-11-02",
+          "ofertas": [],
+          "copys": []
+        },
+        "google": {
+          "ativo": true,
+          "obs": "",
+          "link": "",
+          "status": "rodando",
+          "ultimaVerificacao": "2026-11-08",
+          "ofertas": [],
+          "copys": []
+        },
+        "chatbot": {
+          "ativo": false,
+          "obs": "",
+          "copys": [],
+          "status": "nao_verificado",
+          "ultimaVerificacao": "",
+          "ofertas": []
+        }
+      }
+    },
+    {
+      "id": "join-cliente",
+      "nome": "Join",
+      "site": "https://join.com.br",
+      "redeId": "active",
+      "notas": "",
+      "projetos": {
+        "facebook": {
+          "ativo": true,
+          "obs": "",
+          "link": "",
+          "status": "rodando",
+          "ultimaVerificacao": "2026-11-08",
+          "ofertas": [],
+          "copys": []
+        },
+        "google": {
+          "ativo": true,
+          "obs": "",
+          "link": "",
+          "status": "rodando",
+          "ultimaVerificacao": "2026-11-08",
+          "ofertas": [
+            {
+              "titulo": "Pesquisa: 'como vender online'",
+              "descricao": "Anúncio de pesquisa levando para landing page com isca digital gratuita.",
+              "link": "",
+              "data": "2026-11-05"
+            }
+          ],
+          "copys": []
+        },
+        "chatbot": {
+          "ativo": false,
+          "obs": "",
+          "copys": [],
+          "status": "nao_verificado",
+          "ultimaVerificacao": "",
+          "ofertas": []
+        }
+      }
+    },
+    {
+      "id": "site",
+      "nome": "Site",
+      "site": "",
+      "redeId": "sites",
+      "notas": "",
+      "projetos": {
+        "facebook": {
+          "ativo": false,
+          "obs": "",
+          "link": "",
+          "status": "nao_verificado",
+          "ultimaVerificacao": "",
+          "ofertas": [],
+          "copys": []
+        },
+        "google": {
+          "ativo": false,
+          "obs": "",
+          "link": "",
+          "status": "nao_verificado",
+          "ultimaVerificacao": "",
+          "ofertas": [],
+          "copys": []
+        },
+        "chatbot": {
+          "ativo": false,
+          "obs": "",
+          "copys": [],
+          "status": "nao_verificado",
+          "ultimaVerificacao": "",
+          "ofertas": []
+        }
+      }
+    },
+    {
+      "id": "juana",
+      "nome": "Juana",
+      "site": "https://juana.com.br",
+      "redeId": "jose",
+      "notas": "",
+      "projetos": {
+        "facebook": {
+          "ativo": false,
+          "obs": "",
+          "link": "",
+          "status": "nao_verificado",
+          "ultimaVerificacao": "",
+          "ofertas": [],
+          "copys": []
+        },
+        "google": {
+          "ativo": false,
+          "obs": "",
+          "link": "",
+          "status": "nao_verificado",
+          "ultimaVerificacao": "",
+          "ofertas": [],
+          "copys": []
+        },
+        "chatbot": {
+          "ativo": true,
+          "obs": "",
+          "copys": [
+            {
+              "pagina": "/oferta",
+              "texto": "Oi! Quer garantir sua vaga com 40% de desconto hoje?"
+            }
+          ],
+          "status": "rodando",
+          "ultimaVerificacao": "2026-11-08",
+          "ofertas": []
+        }
+      }
+    },
+    {
+      "id": "amanda",
+      "nome": "Amanda",
+      "site": "",
+      "redeId": "maria",
+      "notas": "",
+      "projetos": {
+        "facebook": {
+          "ativo": false,
+          "obs": "",
+          "link": "",
+          "status": "nao_verificado",
+          "ultimaVerificacao": "",
+          "ofertas": [],
+          "copys": []
+        },
+        "google": {
+          "ativo": false,
+          "obs": "",
+          "link": "",
+          "status": "nao_verificado",
+          "ultimaVerificacao": "",
+          "ofertas": [],
+          "copys": []
+        },
+        "chatbot": {
+          "ativo": false,
+          "obs": "",
+          "copys": [],
+          "status": "nao_verificado",
+          "ultimaVerificacao": "",
+          "ofertas": []
+        }
+      }
+    },
+    {
+      "id": "radaela",
+      "nome": "Radaela",
+      "site": "",
+      "redeId": "joao",
+      "notas": "",
+      "projetos": {
+        "facebook": {
+          "ativo": false,
+          "obs": "",
+          "link": "",
+          "status": "nao_verificado",
+          "ultimaVerificacao": "",
+          "ofertas": [],
+          "copys": []
+        },
+        "google": {
+          "ativo": false,
+          "obs": "",
+          "link": "",
+          "status": "nao_verificado",
+          "ultimaVerificacao": "",
+          "ofertas": [],
+          "copys": []
+        },
+        "chatbot": {
+          "ativo": false,
+          "obs": "",
+          "copys": [],
+          "status": "nao_verificado",
+          "ultimaVerificacao": "",
+          "ofertas": []
+        }
+      }
+    }
+  ]
+}

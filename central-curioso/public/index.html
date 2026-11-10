@@ -4,15 +4,27 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Central Curioso</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-  <header class="topo">
-    <a href="#/" class="logo">🔎 Central Curioso</a>
-    <input id="busca" type="search" placeholder="Buscar cliente ou rede...">
-  </header>
-  <nav id="trilha" class="trilha"></nav>
-  <main id="app"></main>
+  <aside class="lateral">
+    <a href="#/" class="marca"><span class="marca-icone">◎</span><span>Central <b>Curioso</b></span></a>
+    <div class="lateral-secao">Visão geral</div>
+    <a href="#/" class="item-lateral" data-rota="home">Painel</a>
+    <div class="lateral-secao">Redes <button class="mini" id="bNovaRede" title="Nova rede">+</button></div>
+    <nav id="menuRedes"></nav>
+    <div class="lateral-secao">Projetos</div>
+    <nav id="menuProjetos"></nav>
+  </aside>
+  <div class="conteudo">
+    <header class="topo">
+      <div id="trilha" class="trilha"></div>
+      <input id="busca" type="search" placeholder="Buscar cliente, site ou rede…">
+    </header>
+    <main id="app"></main>
+  </div>
   <script src="/app.js"></script>
 </body>
 </html>

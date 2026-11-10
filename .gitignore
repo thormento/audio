@@ -2,3 +2,6 @@ node_modules/
 .env
 saida/
 data/
+
+# Central Curioso: os dados fazem parte do projeto
+!central-curioso/data/
