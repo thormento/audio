@@ -6,7 +6,8 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "cli": "node index.js"
+    "cli": "node index.js",
+    "curioso": "node central-curioso/server.js"
   },
   "engines": {
     "node": ">=18"
