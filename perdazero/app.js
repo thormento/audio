@@ -66,6 +66,18 @@ const icon = (n) => `<svg viewBox="0 0 24 24" aria-hidden="true">${I[n] || ''}</
 const topbar = (title, back = 'history') =>
   `<div class="topbar"><button class="iconbtn" data-back="${esc(back)}" aria-label="Voltar">${icon('back')}</button><h2>${esc(title)}</h2></div>`;
 
+function ask(msg, okLabel = 'Confirmar') {
+  return new Promise((resolve) => {
+    const m = document.createElement('div');
+    m.className = 'modal';
+    m.innerHTML = `<div class="sheet card" role="dialog" aria-modal="true"><p>${esc(msg)}</p><div class="stack"><button class="btn danger" data-ok>${esc(okLabel)}</button><button class="btn ghost" data-no>Cancelar</button></div></div>`;
+    const close = (v) => { m.remove(); resolve(v); };
+    m.addEventListener('click', (e) => { if (e.target === m || e.target.closest('[data-no]')) close(false); if (e.target.closest('[data-ok]')) close(true); });
+    document.body.appendChild(m);
+    m.querySelector('[data-ok]').focus();
+  });
+}
+
 let toastTimer;
 function toast(msg, title) {
   const t = document.getElementById('toast');
@@ -518,9 +530,9 @@ function viewForm(editId) {
   draw();
 }
 
-function removeItem(id) {
+async function removeItem(id) {
   const it = findItem(id);
-  if (!it || !confirm(`Remover “${it.name}”?`)) return;
+  if (!it || !(await ask(`Remover “${it.name}”?`, 'Remover'))) return;
   state.items = state.items.filter((x) => x.id !== id);
   save();
   toast('Item removido.');
@@ -616,7 +628,7 @@ function viewHome() {
 
   let content;
   if (!items.length) {
-    content = `<div class="card empty" style="margin-top:8px"><div class="ic">${icon('plus')}</div><h2 style="margin-bottom:6px">Nada cadastrado ainda</h2><p>Adicione o primeiro item para começar a ver suas perdas.</p><a class="btn" href="#/cadastro" style="margin-top:18px">Adicionar primeiro item</a></div>`;
+    content = `<div class="card empty" style="margin-top:8px"><div class="ic">${icon('plus')}</div><h2 style="margin-bottom:6px">Nada cadastrado ainda</h2><p>Adicione o primeiro item para começar a ver suas perdas.</p><a class="btn" href="#/cadastro" style="margin-top:18px">Adicionar primeiro item</a><button class="btn ghost" id="sample" style="margin-top:6px">Ver com dados de exemplo</button></div>`;
   } else {
     const block = (title, list, ic, empty) => `
       <div class="section"><h2>${title}</h2><span class="muted">${list.length ? brl0(list.reduce((a, x) => a + x.finding.monthlyLoss, 0)) + '/mês' : ''}</span></div>
@@ -646,6 +658,7 @@ function viewHome() {
     ${content}
     ${items.length ? `<a class="fab" href="#/cadastro">${icon('plus')}Adicionar</a>` : ''}`;
   flashId = null;
+  $app.querySelector('#sample')?.addEventListener('click', loadSample);
 }
 
 // ---------------------------------------------------------------------------
@@ -790,23 +803,47 @@ function viewPerfil() {
       <p class="sub">Organizamos o que você já paga ou tem direito e mostramos, de forma clara, o que está sendo desperdiçado e onde você está gastando demais.</p>
       <p class="muted">Todos os valores são estimativas. Seus dados ficam apenas neste aparelho: sem conta e sem conexão bancária.</p>
     </div>
+    <button class="btn secondary" id="sample" style="margin-top:14px">Carregar dados de exemplo</button>
     <button class="btn ghost" id="wipe" style="margin-top:14px;color:var(--loss)">Apagar todos os dados</button>`;
   $app.querySelectorAll('[data-del]').forEach((b) => b.addEventListener('click', () => removeItem(b.dataset.del)));
+  $app.querySelector('#sample').addEventListener('click', async () => {
+    if (state.items.length && !(await ask('Substituir seus itens pelos dados de exemplo?', 'Substituir'))) return;
+    loadSample(); go('#/');
+  });
   $app.querySelector('#notif').addEventListener('change', async (e) => {
     if (e.target.checked) e.target.checked = await askNotifications();
     else { state.notifications = false; save(); }
     if (state.notifications) { Object.values(state.alerts).forEach((a) => (a.notified = false)); syncAlerts(); }
   });
-  $app.querySelector('#wipe').addEventListener('click', () => {
-    if (!confirm('Apagar todos os itens e recomeçar?')) return;
+  $app.querySelector('#wipe').addEventListener('click', async () => {
+    if (!(await ask('Apagar todos os itens e recomeçar?', 'Apagar tudo'))) return;
     state = { onboarded: false, notifications: false, items: [], alerts: {} };
     save();
     go('#/onboarding/1');
   });
 }
 
+function loadSample() {
+  const inDays = (n) => isoDaysAgo(-n);
+  const mk = (o) => ({ id: uid(), createdAt: new Date().toISOString(), dismissed: {}, source: 'exemplo', frequency: 'mensal', ...o });
+  state.items = [
+    mk({ name: 'Netflix (exemplo)', category: 'assinatura', amount: 55.9, lastUsedAt: isoDaysAgo(47) }),
+    mk({ name: 'Academia (exemplo)', category: 'assinatura', amount: 119.9, lastUsedAt: isoDaysAgo(20) }),
+    mk({ name: 'Spotify (exemplo)', category: 'assinatura', amount: 21.9, lastUsedAt: isoDaysAgo(2) }),
+    mk({ name: 'Conta de energia (exemplo)', category: 'conta', subtype: 'energia', amount: 312, people: 2, previousAmount: 248 }),
+    mk({ name: 'Internet (exemplo)', category: 'conta', subtype: 'internet', amount: 109.9, people: 2 }),
+    mk({ name: 'Cartão (exemplo)', category: 'cartao', annualFee: 480, feeFrequency: 'anual', points: 4600, pointsExpiry: inDays(18) }),
+    mk({ name: 'Tarifa do banco (exemplo)', category: 'banco', amount: 42.5 }),
+    mk({ name: 'Wellhub (exemplo)', category: 'beneficio', subtype: 'beneficio', amount: 150, activated: false }),
+  ];
+  state.onboarded = true;
+  save();
+  toast('Dados de exemplo carregados. Apague em Perfil quando quiser.', 'Exemplo');
+  render();
+}
+
 // ---------------------------------------------------------------------------
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
-  navigator.serviceWorker.register('sw.js').catch(() => {});
+  try { navigator.serviceWorker.register('sw.js').catch(() => {}); } catch {}
 }
 render();
