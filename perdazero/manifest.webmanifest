@@ -1,0 +1,12 @@
+{
+  "name": "Perdazero — Monitor de Perda de Dinheiro",
+  "short_name": "Perdazero",
+  "description": "Veja o que você está deixando de usar e onde está gastando demais.",
+  "lang": "pt-BR",
+  "start_url": "./#/",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f5f2",
+  "theme_color": "#0f1720",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}

@@ -1,0 +1,11 @@
+{
+  "name": "perdazero",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Monitor de Perda de Dinheiro — v1 (PWA estático)",
+  "scripts": {
+    "start": "npx --yes serve -l 5173 .",
+    "test": "node --test test/*.test.js"
+  }
+}
